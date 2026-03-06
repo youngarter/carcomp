@@ -1,9 +1,10 @@
 "use client";
 import React from "react";
-import { Zap, Settings, Ruler, ShieldCheck, Car } from "lucide-react";
+import { Zap, Settings, Ruler, ShieldCheck, Car as CarIcon } from "lucide-react";
+import { Specs } from "../../../types/car";
 
 interface TechnicalSpecsProps {
-    specs: any;
+    specs: Specs;
 }
 
 const TechnicalSpecs = ({ specs }: TechnicalSpecsProps) => {
@@ -70,7 +71,7 @@ const TechnicalSpecs = ({ specs }: TechnicalSpecsProps) => {
         },
         {
             title: "Esthétique",
-            icon: <Car className="w-5 h-5 text-amber-500" />,
+            icon: <CarIcon className="w-5 h-5 text-amber-500" />,
             items: [
                 { label: "Jantes", value: specs.esthetique?.jantesAlu },
                 { label: "Sellerie", value: specs.esthetique?.sellerie },

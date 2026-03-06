@@ -1,9 +1,10 @@
 "use client";
 import React from "react";
 import { TrendingUp, Activity, DollarSign, Award } from "lucide-react";
+import { Car } from "../../../types/car";
 
 interface PredictiveIntelligenceProps {
-    trim: any;
+    trim: Car;
 }
 
 const PredictiveIntelligence = ({ trim }: PredictiveIntelligenceProps) => {

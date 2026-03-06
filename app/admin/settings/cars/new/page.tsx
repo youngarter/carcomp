@@ -12,7 +12,7 @@ import {
     getBrands,
     getModelsByBrand,
     getFinitionsByModel
-} from "../actions";
+} from "../../../../car/actions";
 
 export default function NewCarPage() {
     const [step, setStep] = useState(1);
@@ -161,8 +161,19 @@ export default function NewCarPage() {
         const uploadData = new FormData();
         uploadData.append("file", file);
         uploadData.append("brand", formData.brandName || "common");
+        uploadData.append("model", formData.modelName || "common");
         uploadData.append("year", formData.year || "2025");
         uploadData.append("finition", formData.finitionName || "standard");
+
+        // Generate a temporary slug for the folder path if brand/model/finition/year are selected
+        const tempSlug = [formData.brandName, formData.modelName, formData.finitionName, formData.year]
+            .filter(Boolean)
+            .join("-")
+            .toLowerCase()
+            .replace(/[^a-z0-9]/g, "-");
+
+        uploadData.append("slug", tempSlug || "unknown");
+        uploadData.append("index", index.toString());
 
         try {
             const res = await fetch("/api/upload", {
@@ -212,7 +223,7 @@ export default function NewCarPage() {
 
         const res = await createCarStepByStep(formData);
         if (res.success) {
-            window.location.href = "/";
+            window.location.href = "/admin/settings/cars";
         } else {
             alert("Erreur: " + res.error);
             setLoading(false);

@@ -1,9 +1,10 @@
 "use client";
 import React from "react";
-import { X, Scale, Star, Activity, DollarSign, Zap } from "lucide-react";
+import { X, Scale } from "lucide-react";
+import { Car } from "../../../types/car";
 
 interface ComparatorProps {
-    vehicles: any[];
+    vehicles: Car[];
     onRemove: (id: string) => void;
 }
 
