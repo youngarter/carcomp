@@ -117,6 +117,10 @@ export interface Car {
     slug?: string | null;
     name: string;
     price: number;
+    isPromoted?: boolean;
+    promotionalPrice?: number | null;
+    promoStartDate?: string | null;
+    promoEndDate?: string | null;
     images: string[];
     image?: string | null;
     model: CarModel;

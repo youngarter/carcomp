@@ -1,16 +1,19 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Sparkles, Search, ChevronRight } from "lucide-react";
-import Link from "next/link";
 
 // Components
 import Chatbot from "./car/components/Chatbot";
-import VehicleCard from "./car/components/VehicleCard";
 import Header from "./car/components/Header";
 import Footer from "./car/components/Footer";
-import HeroSection from "./car/components/HeroSection";
-import SearchBar from "./car/components/SearchBar";
+import HeroCarousel from "./car/components/HeroCarousel";
+import AISearch from "./car/components/AISearch";
+import PromotionCars from "./car/components/PromotionCars";
+import BrandsGrid from "./car/components/BrandsGrid";
+import AIComparisons from "./car/components/AIComparisons";
+import UserExperiences from "./car/components/UserExperiences";
+import FeaturedArticles from "./car/components/FeaturedArticles";
+
 import { getFinitionCatalog } from "./car/actions";
 import { useStore } from "../store/useStore";
 import { Car } from "../types/car";
@@ -23,11 +26,10 @@ export default function Home() {
   } = useStore();
 
   const [catalog, setCatalog] = useState<Car[]>([]);
-  const [loading, setLoading] = useState(true);
 
   const filteredCatalog = catalog.filter((t) =>
-    t.model.brand.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    t.model.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    t.model?.brand?.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    t.model?.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     t.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -37,9 +39,13 @@ export default function Home() {
 
       const mappedData: Car[] = data.map((f: any) => ({
         id: f.id,
-        slug: f.slug, // New slug field
+        slug: f.slug,
         name: f.name,
         price: f.price,
+        isPromoted: f.isPromoted,
+        promotionalPrice: f.priceHistories?.[0]?.promotionalPrice || null,
+        promoStartDate: f.priceHistories?.[0]?.startDate ? new Date(f.priceHistories[0].startDate).toISOString() : null,
+        promoEndDate: f.priceHistories?.[0]?.endDate ? new Date(f.priceHistories[0].endDate).toISOString() : null,
         images: f.images || [],
         image: f.image,
         model: {
@@ -152,7 +158,6 @@ export default function Home() {
       }));
 
       setCatalog(mappedData);
-      setLoading(false);
     }
     loadCatalog();
   }, []);
@@ -162,51 +167,32 @@ export default function Home() {
       <Header />
       <Chatbot />
 
-      <main>
-        <HeroSection />
+      <main className="flex flex-col">
+        <HeroCarousel />
 
-        <section className="pb-32">
-          <div className="container mx-auto px-4 max-w-7xl">
-            <div className="mb-20 text-center">
-              <h2 className="text-4xl md:text-5xl font-black text-zinc-900 mb-6">
-                Nos recommandations <span className="text-emerald-600">IA</span>
-              </h2>
-              <p className="text-zinc-500 font-medium max-w-2xl mx-auto mb-12">
-                Véhicules sélectionnés par notre algorithme selon les tendances du marché marocain et la fiabilité reconnue.
-              </p>
-              <SearchBar value={searchQuery} onChange={setSearchQuery} />
-            </div>
+        <AISearch
+          value={searchQuery}
+          onChange={setSearchQuery}
+          onSubmit={() => {
+            document.getElementById('promotions')?.scrollIntoView({ behavior: 'smooth' });
+          }}
+        />
 
-            {loading ? (
-              <div className="col-span-full py-40 flex flex-col items-center justify-center gap-6">
-                <div className="w-20 h-20 border-[10px] border-emerald-50 border-t-emerald-600 rounded-full animate-spin shadow-2xl shadow-emerald-100" />
-                <p className="font-black text-[10px] uppercase tracking-[0.4em] text-emerald-600 animate-pulse">Intelligence en action...</p>
-              </div>
-            ) : filteredCatalog.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
-                {filteredCatalog.map((t) => (
-                  <VehicleCard
-                    key={t.id}
-                    trim={t}
-                    onCompare={addTrimToCompare}
-                    onViewDetails={() => { }}
-                    isComparing={!!comparingTrims.find((ct) => ct.id === t.id)}
-                  />
-                ))}
-              </div>
-            ) : (
-              <div className="col-span-full py-32 bg-white/50 backdrop-blur-sm rounded-[60px] border border-zinc-100 text-center shadow-sm">
-                <div className="w-24 h-24 bg-zinc-50 rounded-full mx-auto mb-10 flex items-center justify-center shadow-inner">
-                  <Search className="w-12 h-12 text-zinc-200" />
-                </div>
-                <h3 className="text-3xl font-black text-zinc-900 mb-6">Aucun résultat trouvé</h3>
-                <p className="text-zinc-500 font-medium max-w-md mx-auto leading-relaxed">
-                  Notre IA n&apos;a pas trouvé de correspondance exacte. Essayez de simplifier vos critères ou de lancer un nouveau diagnostic.
-                </p>
-              </div>
-            )}
-          </div>
-        </section>
+        <div id="promotions">
+          <PromotionCars
+            cars={filteredCatalog}
+            onCompare={addTrimToCompare}
+            comparingTrims={comparingTrims}
+          />
+        </div>
+
+        <BrandsGrid />
+
+        <AIComparisons />
+
+        <UserExperiences />
+
+        <FeaturedArticles />
       </main>
 
       <Footer />

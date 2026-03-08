@@ -5,7 +5,7 @@
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
-  provider = "prisma-client-js"
+  provider = "prisma-client"
   output   = "../app/generated/prisma"
 }
 
@@ -238,6 +238,9 @@ model Finition {
   barresToit      Boolean  @default(false)
   vitresSurteintees Boolean @default(false)
 
+  isPromoted      Boolean  @default(false)
+  priceHistories  PriceHistory[]
+
   createdAt       DateTime   @default(now())
   updatedAt       DateTime   @updatedAt
 }
@@ -260,6 +263,31 @@ model UserPreference {
   usage       String?
   passengers  Int?
   priority    String?  // comfort, performance, etc.
-  energy      String?
   createdAt   DateTime @default(now())
+}
+
+model HeroSlide {
+  id          String   @id @default(uuid())
+  title       String
+  subtitle    String
+  description String
+  price       String
+  image       String
+  brandLogo   String
+  order       Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model PriceHistory {
+  id               String    @id @default(uuid())
+  finitionId       String
+  finition         Finition  @relation(fields: [finitionId], references: [id], onDelete: Cascade)
+  price            Float     // Regular price at that time
+  isPromotion      Boolean   @default(false)
+  promotionalPrice Float?    // Discounted price
+  startDate        DateTime?
+  endDate          DateTime?
+  createdAt        DateTime  @default(now())
 }

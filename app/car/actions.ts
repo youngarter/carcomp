@@ -137,6 +137,10 @@ export async function getFinitionCatalog() {
                         brand: true,
                     },
                 },
+                priceHistories: {
+                    orderBy: { createdAt: "desc" },
+                    take: 1,
+                }
             },
             orderBy: {
                 createdAt: "desc",
@@ -159,6 +163,10 @@ export async function getFinitionBySlug(slug: string) {
                         brand: true,
                     },
                 },
+                priceHistories: {
+                    orderBy: { createdAt: "desc" },
+                    take: 1,
+                }
             },
         });
     } catch (error: any) {
@@ -180,6 +188,10 @@ const CarStepSchema = z.object({
     image: z.string().optional(),
     year: z.coerce.number().optional(),
     youtubeVideo: z.string().url("URL YouTube invalide").optional().or(z.literal("")),
+    isPromoted: z.boolean().optional(),
+    promotionalPrice: z.coerce.number().optional().nullable(),
+    promoStartDate: z.string().optional().nullable(),
+    promoEndDate: z.string().optional().nullable(),
 });
 
 export async function createCarStepByStep(data: any) {
@@ -196,6 +208,7 @@ export async function createCarStepByStep(data: any) {
             year: dataYear, finitionId,
             aiScore, reliability, maintCost,
             images, youtubeVideo,
+            isPromoted, promotionalPrice, promoStartDate, promoEndDate,
             ...specs
         } = data;
 
@@ -279,7 +292,7 @@ export async function createCarStepByStep(data: any) {
             }
         }
 
-        await prisma.finition.create({
+        const newFinition = await prisma.finition.create({
             data: {
                 slug,
                 name: finitionName,
@@ -289,9 +302,24 @@ export async function createCarStepByStep(data: any) {
                 image: image || "",
                 images: Array.isArray(images) ? images.filter(img => !!img) : [],
                 youtubeVideo: youtubeVideo || null,
+                isPromoted: isPromoted || false,
                 ...processedSpecs
             },
         });
+
+        // Handle PriceHistory if promoted
+        if (isPromoted && promotionalPrice) {
+            await prisma.priceHistory.create({
+                data: {
+                    finitionId: newFinition.id,
+                    price: parseFloat(price) || 0,
+                    isPromotion: true,
+                    promotionalPrice: parseFloat(promotionalPrice),
+                    startDate: promoStartDate ? new Date(promoStartDate) : null,
+                    endDate: promoEndDate ? new Date(promoEndDate) : null,
+                }
+            });
+        }
 
         revalidatePath("/");
 
@@ -328,6 +356,7 @@ export async function updateCarStepByStep(id: string, data: any) {
             year, finitionId,
             aiScore, reliability, maintCost,
             images, youtubeVideo,
+            isPromoted, promotionalPrice, promoStartDate, promoEndDate,
             ...specs
         } = data;
 
@@ -377,9 +406,24 @@ export async function updateCarStepByStep(id: string, data: any) {
                 image: image || "",
                 images: Array.isArray(images) ? images.filter(img => !!img) : [],
                 youtubeVideo: youtubeVideo || null,
+                isPromoted: isPromoted || false,
                 ...processedSpecs
             },
         });
+
+        // Handle PriceHistory if promoted
+        if (isPromoted && promotionalPrice) {
+            await prisma.priceHistory.create({
+                data: {
+                    finitionId: id,
+                    price: parseFloat(price) || 0,
+                    isPromotion: true,
+                    promotionalPrice: parseFloat(promotionalPrice),
+                    startDate: promoStartDate ? new Date(promoStartDate) : null,
+                    endDate: promoEndDate ? new Date(promoEndDate) : null,
+                }
+            });
+        }
 
         revalidatePath("/");
         revalidatePath("/admin/settings/cars");
@@ -529,5 +573,112 @@ export async function deleteFinition(id: string) {
     } catch (error: any) {
         console.error("Failed to delete car:", error);
         return { error: error.message || "Erreur lors de la suppression" };
+    }
+}
+
+// ==========================================
+// HERO SLIDE ACTIONS
+// ==========================================
+
+export async function getHeroSlides() {
+    try {
+        return await prisma.heroSlide.findMany({
+            orderBy: { order: "asc" }
+        });
+    } catch (error) {
+        console.error("Failed to fetch hero slides:", error);
+        return [];
+    }
+}
+
+export async function getActiveHeroSlides() {
+    try {
+        return await prisma.heroSlide.findMany({
+            where: { isActive: true },
+            orderBy: { order: "asc" }
+        });
+    } catch (error) {
+        console.error("Failed to fetch active hero slides:", error);
+        return [];
+    }
+}
+
+export async function createHeroSlide(data: {
+    title: string;
+    subtitle: string;
+    description: string;
+    price: string;
+    image: string;
+    brandLogo: string;
+    order: number;
+    isActive: boolean;
+}) {
+    try {
+        await prisma.heroSlide.create({ data });
+        revalidatePath("/");
+        revalidatePath("/admin/settings/hero");
+        return { success: true };
+    } catch (error: any) {
+        console.error("Failed to create hero slide:", error);
+        return { error: error.message || "Erreur lors de la création du slide" };
+    }
+}
+
+export async function updateHeroSlide(id: string, data: any) {
+    try {
+        await prisma.heroSlide.update({
+            where: { id },
+            data
+        });
+        revalidatePath("/");
+        revalidatePath("/admin/settings/hero");
+        return { success: true };
+    } catch (error: any) {
+        console.error("Failed to update hero slide:", error);
+        return { error: error.message || "Erreur lors de la mise à jour du slide" };
+    }
+}
+
+export async function deleteHeroSlide(id: string) {
+    try {
+        await prisma.heroSlide.delete({ where: { id } });
+        revalidatePath("/");
+        revalidatePath("/admin/settings/hero");
+        return { success: true };
+    } catch (error: any) {
+        console.error("Failed to delete hero slide:", error);
+        return { error: error.message || "Erreur lors de la suppression du slide" };
+    }
+}
+
+// ==========================================
+// PROMOTIONS & PRICE HISTORY ACTIONS
+// ==========================================
+
+export async function toggleFinitionPromotion(id: string, isPromoted: boolean) {
+    try {
+        await prisma.finition.update({
+            where: { id },
+            data: { isPromoted: isPromoted }
+        });
+        revalidatePath("/");
+        revalidatePath("/admin/settings/cars");
+
+        // Log activity
+        const session = await auth();
+        if (session?.user?.id) {
+            await prisma.activityLog.create({
+                data: {
+                    userId: session.user.id,
+                    action: isPromoted ? "ENABLE_PROMOTION" : "DISABLE_PROMOTION",
+                    details: `Updated promotion status for Finition ID: ${id}`
+                }
+            });
+        }
+
+        return { success: true };
+    } catch (error) {
+        console.error("Failed to toggle finition promotion status:", error);
+        return { error: "Failed to update promotion status" };
     }
 }

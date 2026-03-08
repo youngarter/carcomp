@@ -17,17 +17,19 @@ const VehicleCard = ({ trim, onCompare, isComparing }: VehicleCardProps) => {
     return (
         <div className="bg-white rounded-[2rem] p-6 shadow-[0_10px_40px_rgba(0,0,0,0.04)] hover:shadow-[0_20px_60px_rgba(0,0,0,0.08)] transition-all duration-500 group flex flex-col relative border border-zinc-100/50">
             {/* Image Container */}
-            <div className="aspect-[1.4/1] rounded-[1.5rem] overflow-hidden mb-8 relative bg-zinc-50">
-                <img
-                    src={displayImage}
-                    alt={trim.model?.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                    referrerPolicy="no-referrer"
-                />
+            <div className="aspect-[1.4/1] rounded-[1.5rem] mb-8 relative bg-zinc-50">
+                <div className="w-full h-full rounded-[1.5rem] overflow-hidden">
+                    <img
+                        src={displayImage}
+                        alt={trim.model?.name}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                        referrerPolicy="no-referrer"
+                    />
+                </div>
 
-                {/* AI Score Badge - Matching Screenshot (Top Right) */}
-                <div className="absolute top-4 right-4 z-10">
-                    <div className="w-14 h-14 bg-white rounded-full flex items-center justify-center shadow-xl border-[3px] border-emerald-500">
+                {/* AI Score Badge - Floating Top Right Edge */}
+                <div className="absolute -top-3 -right-3 z-10 pointer-events-none">
+                    <div className="w-14 h-14 bg-white rounded-full flex items-center justify-center shadow-[0_10px_20px_rgba(16,185,129,0.3)] border-[3px] border-emerald-500 ring-4 ring-white pointer-events-auto">
                         <span className="text-base font-black text-zinc-900">{(trim.model?.aiScore || 8.5).toFixed(1)}</span>
                     </div>
                 </div>
@@ -57,10 +59,23 @@ const VehicleCard = ({ trim, onCompare, isComparing }: VehicleCardProps) => {
             {/* Footer Row */}
             <div className="px-2 flex items-center justify-between mt-auto">
                 <div className="flex flex-col">
-                    <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-1">À PARTIR DE</span>
-                    <span className="text-2xl font-black text-zinc-900 tracking-tight" suppressHydrationWarning>
-                        {trim.price.toLocaleString("fr-FR")} DH
+                    <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-1">
+                        {trim.isPromoted && trim.promotionalPrice ? "EN PROMO" : "À PARTIR DE"}
                     </span>
+                    {trim.isPromoted && trim.promotionalPrice ? (
+                        <div className="flex flex-col">
+                            <span className="text-sm font-bold text-zinc-400 line-through decoration-red-500/50 h-5" suppressHydrationWarning>
+                                {trim.price.toLocaleString("fr-FR")}
+                            </span>
+                            <span className="text-2xl font-black text-emerald-600 tracking-tight" suppressHydrationWarning>
+                                {trim.promotionalPrice.toLocaleString("fr-FR")} DH
+                            </span>
+                        </div>
+                    ) : (
+                        <span className="text-2xl font-black text-zinc-900 tracking-tight mt-5" suppressHydrationWarning>
+                            {trim.price.toLocaleString("fr-FR")} DH
+                        </span>
+                    )}
                 </div>
 
                 <div className="flex gap-3">

@@ -36,6 +36,10 @@ export default function EditCarPage({ params }: { params: Promise<{ slug: string
         finitionName: "",
         year: "2025",
         price: "",
+        isPromoted: false,
+        promotionalPrice: "",
+        promoStartDate: "",
+        promoEndDate: "",
         images: ["", "", "", "", "", "", "", "", "", ""],
         youtubeVideo: "",
         motorisation: "",
@@ -96,7 +100,7 @@ export default function EditCarPage({ params }: { params: Promise<{ slug: string
     useEffect(() => {
         async function fetchData() {
             try {
-                const car = await getFinitionBySlug(slug);
+                const car = await getFinitionBySlug(slug) as any;
                 if (car) {
                     setFinitionId(car.id);
                     setFormData({
@@ -111,6 +115,10 @@ export default function EditCarPage({ params }: { params: Promise<{ slug: string
                         finitionName: car.name,
                         year: car.year?.toString() || "2025",
                         price: car.price?.toString() || "",
+                        isPromoted: car.isPromoted || false,
+                        promotionalPrice: car.priceHistories?.[0]?.promotionalPrice?.toString() || "",
+                        promoStartDate: car.priceHistories?.[0]?.startDate ? new Date(car.priceHistories[0].startDate).toISOString() : "",
+                        promoEndDate: car.priceHistories?.[0]?.endDate ? new Date(car.priceHistories[0].endDate).toISOString() : "",
                         images: car.images && car.images.length > 0 ? [...car.images, ...Array(10 - car.images.length).fill("")] : Array(10).fill(""),
                         youtubeVideo: car.youtubeVideo || "",
                         motorisation: car.motorisation || "",

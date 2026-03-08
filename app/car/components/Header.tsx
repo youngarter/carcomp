@@ -1,7 +1,7 @@
 "use client";
 
-import React from "react";
-import { Car, Menu, X } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Car, Menu, X, Search } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useStore } from "../../../store/useStore";
 import Link from "next/link";
@@ -13,20 +13,31 @@ const Header = () => {
     const { isMenuOpen, setIsMenuOpen } = useStore();
     const pathname = usePathname();
     const { data: session, status } = useSession();
+    const [scrolled, setScrolled] = useState(false);
+
+    useEffect(() => {
+        const handleScroll = () => {
+            setScrolled(window.scrollY > 20);
+        };
+        window.addEventListener("scroll", handleScroll);
+        return () => window.removeEventListener("scroll", handleScroll);
+    }, []);
 
     const navLinks = [
-        { name: "Catalogue", href: "/" },
-        { name: "Diagnostic IA", href: "/car/diagnostic" },
-        { name: "Comparateur", href: "/car/compare" },
+        { name: "Compare Cars", href: "/car/compare" },
+        { name: "Brands", href: "/#brands" },
+        { name: "AI Advisor", href: "/car/diagnostic" },
+        { name: "Reviews", href: "/#reviews" },
     ];
 
     const isLoadingAuth = status === "loading";
 
     return (
         <>
-            <nav className="fixed top-0 w-full z-50 bg-white/90 backdrop-blur-3xl border-b border-black/[0.03]">
+            <nav className={`fixed top-0 w-full z-50 transition-all duration-300 bg-white ${scrolled ? "shadow-sm border-b border-zinc-200" : "border-b border-zinc-100"}`}>
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex justify-between items-center h-24">
+                        {/* Logo */}
                         <Link
                             href="/"
                             className="flex items-center gap-3 group"
@@ -36,33 +47,47 @@ const Header = () => {
                             </span>
                         </Link>
 
+                        {/* Center Nav */}
                         <div className="hidden md:flex items-center gap-12">
                             {navLinks.map((link) => (
                                 <Link
                                     key={link.href}
                                     href={link.href}
-                                    className={`text-[12px] font-bold transition-all relative py-2 ${pathname === link.href ? "text-emerald-500" : "text-zinc-500 hover:text-zinc-900"}`}
+                                    className={`text-[13px] font-bold transition-all relative py-2 ${pathname === link.href ? "text-emerald-600" : "text-zinc-600 hover:text-zinc-900"}`}
                                 >
                                     {link.name}
                                 </Link>
                             ))}
                         </div>
 
-                        <div className="hidden md:flex items-center gap-8">
+                        {/* Right Actions */}
+                        <div className="hidden md:flex items-center gap-6">
+                            <button className="p-2 text-zinc-600 hover:text-emerald-600 hover:bg-emerald-50 rounded-full transition-all">
+                                <Search className="w-5 h-5" />
+                            </button>
+
                             {isLoadingAuth ? (
-                                <div className="w-32 h-12 bg-zinc-50 animate-pulse rounded-2xl" />
+                                <div className="w-10 h-10 bg-zinc-100 animate-pulse rounded-full" />
                             ) : session?.user ? (
                                 <UserMenu user={session.user as any} />
                             ) : (
-                                <Link
-                                    href="/car/diagnostic"
-                                    className="px-8 py-4 rounded-xl bg-emerald-500 text-white text-[11px] font-black uppercase tracking-widest hover:bg-emerald-400 transition-all shadow-md active:scale-95"
+                                <button
+                                    onClick={() => signIn()}
+                                    className="text-[13px] font-bold text-zinc-600 hover:text-zinc-900 transition-colors"
                                 >
-                                    DIAGNOSTIC IA
-                                </Link>
+                                    Login
+                                </button>
                             )}
+
+                            <Link
+                                href="/car/compare"
+                                className="px-6 py-3 rounded-full bg-zinc-900 text-white text-[12px] font-bold hover:bg-zinc-800 transition-all shadow-md active:scale-95"
+                            >
+                                Compare Cars
+                            </Link>
                         </div>
 
+                        {/* Mobile Menu Toggle */}
                         <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="md:hidden p-3 bg-zinc-50 rounded-xl text-zinc-900">
                             {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
                         </button>
@@ -119,12 +144,14 @@ const Header = () => {
                                     </button>
                                 </div>
                             ) : (
-                                <button
-                                    onClick={() => signIn()}
-                                    className="w-full py-6 rounded-3xl bg-zinc-900 text-white font-black uppercase tracking-widest text-xs shadow-2xl shadow-zinc-200"
-                                >
-                                    Se connecter
-                                </button>
+                                <div className="flex flex-col gap-4">
+                                    <button
+                                        onClick={() => signIn()}
+                                        className="w-full py-6 rounded-3xl bg-zinc-900 text-white font-black uppercase tracking-widest text-xs shadow-2xl shadow-zinc-200"
+                                    >
+                                        Login
+                                    </button>
+                                </div>
                             )}
                         </div>
                     </motion.div>

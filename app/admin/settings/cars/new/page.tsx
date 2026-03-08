@@ -39,6 +39,10 @@ export default function NewCarPage() {
         finitionName: "",
         year: "2025",
         price: "",
+        isPromoted: false,
+        promotionalPrice: "",
+        promoStartDate: "",
+        promoEndDate: "",
         images: ["", "", "", "", "", "", "", "", "", ""], // Media library (max 10)
         youtubeVideo: "",
         // Moteur & Infos techniques
@@ -694,6 +698,61 @@ export default function NewCarPage() {
                                             className="w-full px-6 py-4 rounded-2xl bg-zinc-50 border-none focus:ring-2 focus:ring-emerald-500/20 font-black"
                                         />
                                     </div>
+                                </div>
+                            </section>
+
+                            {/* Promotions & Pricing */}
+                            <section className="bg-white p-8 md:p-12 rounded-[40px] border border-black/5 shadow-sm">
+                                <div className="flex items-center gap-4 mb-8">
+                                    <h2 className="text-2xl font-black tracking-tight">Promotions & Tarification</h2>
+                                </div>
+                                <div className="space-y-6">
+                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between p-6 bg-zinc-50 rounded-2xl gap-4 border border-zinc-100">
+                                        <div>
+                                            <h3 className="font-bold text-zinc-900">Activer une promotion "À la une"</h3>
+                                            <p className="text-xs text-zinc-500 font-medium mt-1">Permet de mettre le véhicule en évidence avec un prix barré.</p>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => updateFormData("isPromoted", !formData.isPromoted)}
+                                            className={`w-14 h-8 rounded-full p-1 transition-colors relative inline-flex items-center flex-shrink-0 ${formData.isPromoted ? "bg-emerald-500" : "bg-zinc-200"}`}
+                                        >
+                                            <div className={`w-6 h-6 rounded-full bg-white shadow-sm transition-transform ${formData.isPromoted ? "translate-x-6" : "translate-x-0"}`} />
+                                        </button>
+                                    </div>
+
+                                    {formData.isPromoted && (
+                                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 p-6 border border-emerald-100 bg-emerald-50/30 rounded-2xl">
+                                            <div className="space-y-2">
+                                                <label className="text-[10px] font-black uppercase tracking-widest text-emerald-800 block ml-2">Prix promotionnel (DH) <span className="text-red-500">*</span></label>
+                                                <input
+                                                    type="number"
+                                                    value={formData.promotionalPrice || ""}
+                                                    onChange={(e) => updateFormData("promotionalPrice", e.target.value)}
+                                                    placeholder="Nouveau prix..."
+                                                    className="w-full px-6 py-4 rounded-2xl bg-white border border-emerald-100 focus:ring-2 focus:ring-emerald-500/20 font-black text-emerald-600"
+                                                />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 block ml-2">Date de début</label>
+                                                <input
+                                                    type="date"
+                                                    value={formData.promoStartDate ? formData.promoStartDate.split('T')[0] : ""}
+                                                    onChange={(e) => updateFormData("promoStartDate", e.target.value ? new Date(e.target.value).toISOString() : "")}
+                                                    className="w-full px-6 py-4 rounded-2xl bg-white border border-zinc-100 focus:ring-2 focus:ring-emerald-500/20 font-bold text-sm"
+                                                />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 block ml-2">Date de fin</label>
+                                                <input
+                                                    type="date"
+                                                    value={formData.promoEndDate ? formData.promoEndDate.split('T')[0] : ""}
+                                                    onChange={(e) => updateFormData("promoEndDate", e.target.value ? new Date(e.target.value).toISOString() : "")}
+                                                    className="w-full px-6 py-4 rounded-2xl bg-white border border-zinc-100 focus:ring-2 focus:ring-emerald-500/20 font-bold text-sm"
+                                                />
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             </section>
 

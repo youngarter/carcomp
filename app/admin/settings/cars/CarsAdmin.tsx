@@ -18,8 +18,7 @@ import { getFinitionCatalog, deleteFinition } from "@/app/car/actions";
 import { Car } from "@/types/car";
 import Link from "next/link";
 
-// We'll needing an action to toggle the status
-import { toggleFinitionStatus } from "@/app/car/actions";
+import { toggleFinitionStatus, toggleFinitionPromotion } from "@/app/car/actions";
 
 export default function CarsAdmin() {
     const [cars, setCars] = useState<any[]>([]);
@@ -75,6 +74,16 @@ export default function CarsAdmin() {
             loadCars();
         } else {
             setMessage({ text: "Erreur lors de la mise à jour", type: "error" });
+        }
+    };
+
+    const handleTogglePromotion = async (id: string, currentPromoted: boolean) => {
+        const res = await toggleFinitionPromotion(id, !currentPromoted);
+        if (res.success) {
+            setMessage({ text: currentPromoted ? "Retiré des promotions" : "Ajouté aux promotions", type: "success" });
+            loadCars();
+        } else {
+            setMessage({ text: "Erreur lors de la mise à jour de la promotion", type: "error" });
         }
     };
 
@@ -142,6 +151,7 @@ export default function CarsAdmin() {
                             <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-zinc-400">Véhicule</th>
                             <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-zinc-400">Slug</th>
                             <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-zinc-400">Année</th>
+                            <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-zinc-400 text-center">À la une</th>
                             <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-zinc-400">Status</th>
                             <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-zinc-400 text-right">Actions</th>
                         </tr>
@@ -180,6 +190,15 @@ export default function CarsAdmin() {
                                 </td>
                                 <td className="px-8 py-6">
                                     <span className="font-black text-zinc-600">{car.year || "N/A"}</span>
+                                </td>
+                                <td className="px-8 py-6 text-center">
+                                    <button
+                                        onClick={() => handleTogglePromotion(car.id, car.isPromoted)}
+                                        className={`w-12 h-6 rounded-full p-1 transition-colors relative inline-flex items-center ${car.isPromoted ? "bg-emerald-500" : "bg-zinc-200"}`}
+                                        title={car.isPromoted ? "Retirer des promotions" : "Mettre à la une"}
+                                    >
+                                        <div className={`w-4 h-4 rounded-full bg-white shadow-sm transition-transform ${car.isPromoted ? "translate-x-6" : "translate-x-0"}`} />
+                                    </button>
                                 </td>
                                 <td className="px-8 py-6">
                                     {car.isDeadModel ? (
