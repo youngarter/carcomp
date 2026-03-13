@@ -12,7 +12,7 @@ import {
     getBrands,
     getModelsByBrand,
     getFinitionsByModel
-} from "../../../../car/actions";
+} from "@/app/car/actions";
 
 export default function NewCarPage() {
     const [step, setStep] = useState(1);
@@ -227,7 +227,7 @@ export default function NewCarPage() {
 
         const res = await createCarStepByStep(formData);
         if (res.success) {
-            window.location.href = "/admin/settings/cars";
+            window.location.href = "/admin/cars";
         } else {
             alert("Erreur: " + res.error);
             setLoading(false);

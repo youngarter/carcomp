@@ -1,6 +1,6 @@
 "use server";
 
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/lib/db";
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
 import jwt from "jsonwebtoken";

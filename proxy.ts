@@ -1,29 +1,31 @@
 import { auth } from "@/auth";
-import { NextResponse, NextRequest } from "next/server";
+import { NextResponse } from "next/server";
 
-export default async function middleware(req: NextRequest) {
-    const session = await auth();
-    const { nextUrl } = req;
+export default auth((req) => {
+    const { nextUrl, auth: session } = req;
+    const isLoggedIn = !!session?.user;
+    const isAdmin = session?.user?.role === "ADMIN" || session?.user?.role === "SUPER_ADMIN";
 
-    // Pattern: /car/[slug]/edit
-    const isEditRoute = nextUrl.pathname.match(/\/car\/[^/]+\/edit/);
-
-    if (isEditRoute) {
-        if (!session) {
-            return NextResponse.redirect(new URL("/api/auth/signin", nextUrl));
+    // Protect all /admin/* routes
+    if (nextUrl.pathname.startsWith("/admin")) {
+        if (!isLoggedIn || !isAdmin) {
+            return NextResponse.redirect(new URL("/", nextUrl));
         }
+    }
 
-        const userPermissions = (session.user as any)?.permissions || [];
-        const userRole = (session.user as any)?.role;
-
-        if (!userPermissions.includes("EDIT_CAR") && userRole !== "SUPER_ADMIN") {
-            return NextResponse.rewrite(new URL("/api/auth/error?error=AccessDenied", nextUrl));
+    // Protect all /api/admin/* routes
+    if (nextUrl.pathname.startsWith("/api/admin")) {
+        if (!isLoggedIn || !isAdmin) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
     }
 
     return NextResponse.next();
-}
+});
 
 export const config = {
-    matcher: ["/car/:slug/edit"],
+    matcher: [
+        "/admin/:path*",
+        "/api/admin/:path*",
+    ],
 };

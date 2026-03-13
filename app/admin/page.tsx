@@ -8,7 +8,7 @@ import {
     Clock,
     Zap
 } from "lucide-react";
-import prisma from "@/app/lib/db";
+import { prisma } from "@/lib/db";
 
 export default async function AdminPage() {
     const session = await auth();

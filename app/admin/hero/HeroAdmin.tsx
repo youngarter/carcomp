@@ -34,7 +34,9 @@ export default function HeroAdmin() {
         subtitle: "",
         description: "",
         price: "",
+        url: "",
         image: "",
+        imageAlt: "",
         brandLogo: "",
         order: 0,
         isActive: true,
@@ -55,13 +57,15 @@ export default function HeroAdmin() {
         if (slide) {
             setEditingId(slide.id);
             setFormData({
-                title: slide.title,
-                subtitle: slide.subtitle,
-                description: slide.description,
-                price: slide.price,
-                image: slide.image,
-                brandLogo: slide.brandLogo,
-                order: slide.order,
+                title: slide.title || "",
+                subtitle: slide.subtitle || "",
+                description: slide.description || "",
+                price: slide.price || "",
+                url: slide.url || "",
+                image: slide.image || "",
+                imageAlt: slide.imageAlt || "",
+                brandLogo: slide.brandLogo || "",
+                order: slide.order || 0,
                 isActive: slide.isActive,
             });
         } else {
@@ -71,7 +75,9 @@ export default function HeroAdmin() {
                 subtitle: "",
                 description: "",
                 price: "",
+                url: "",
                 image: "",
+                imageAlt: "",
                 brandLogo: "",
                 order: slides.length,
                 isActive: true,
@@ -304,12 +310,33 @@ export default function HeroAdmin() {
                                 />
                             </div>
 
-                            <div className="space-y-2">
-                                <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 block ml-2">URL Image Principale <span className="text-red-500">*</span></label>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 w-full mb-6">
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 block ml-2">URL Image Principale <span className="text-red-500">*</span></label>
+                                    <input
+                                        value={formData.image}
+                                        onChange={(e) => setFormData({ ...formData, image: e.target.value })}
+                                        placeholder="https://..."
+                                        className="w-full px-6 py-4 rounded-2xl bg-zinc-50 border-none focus:ring-2 focus:ring-emerald-500/20 font-bold"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 block ml-2">Texte Alternatif (Alt) Image</label>
+                                    <input
+                                        value={formData.imageAlt}
+                                        onChange={(e) => setFormData({ ...formData, imageAlt: e.target.value })}
+                                        placeholder="Ex: Voiture de sport rouge"
+                                        className="w-full px-6 py-4 rounded-2xl bg-zinc-50 border-none focus:ring-2 focus:ring-emerald-500/20 font-bold"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="space-y-2 mb-6">
+                                <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 block ml-2">Lien de Redirection (URL)</label>
                                 <input
-                                    value={formData.image}
-                                    onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-                                    placeholder="https://..."
+                                    value={formData.url}
+                                    onChange={(e) => setFormData({ ...formData, url: e.target.value })}
+                                    placeholder="Ex: /car/porsche-taycan ou https://..."
                                     className="w-full px-6 py-4 rounded-2xl bg-zinc-50 border-none focus:ring-2 focus:ring-emerald-500/20 font-bold"
                                 />
                             </div>

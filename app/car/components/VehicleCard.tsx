@@ -1,99 +1,149 @@
+"use client";
+
 import React from "react";
-import { Zap, Wrench, Scale, Star } from "lucide-react";
+import { Zap, Wrench, Scale, Star, ArrowUpRight } from "lucide-react";
 import { Car } from "../../../types/car";
 import Link from "next/link";
+import Image from "next/image";
 
 interface VehicleCardProps {
     trim: Car;
-    onCompare: (trim: Car) => void;
-    onViewDetails: (trim: Car) => void;
-    isComparing: boolean;
+    onCompare?: (trim: Car) => void;
+    isComparing?: boolean;
 }
 
 const VehicleCard = ({ trim, onCompare, isComparing }: VehicleCardProps) => {
-    const detailHref = trim.slug ? `/car/${trim.slug}` : `/car/${trim.id}`;
-    const displayImage = trim.image || trim.model?.imageUrl || "https://picsum.photos/seed/car/800/500";
+    // Safety check for model data
+    const carModel = trim.model || (trim as any).carModel;
+    if (!carModel) return null;
+
+    // Correct redirect URL based on Brand -> Model -> Finition
+    const detailHref = `/car/${carModel.brand.name.toLowerCase()}/${carModel.name.toLowerCase().replace(/\s+/g, '-')}/${trim.slug || trim.id}`;
+    const displayImage = trim.image || carModel.image || "https://picsum.photos/seed/car/800/500";
+    const brandLogo = carModel.brand.logo || "https://api.iconify.design/simple-icons:toyota.svg?color=%2318181b";
+
+    // Promotion logic
+    const hasPromo = trim.isPromoted && trim.promotionalPrice;
+    const promoPercentage = hasPromo ? Math.round(((trim.price - trim.promotionalPrice!) / trim.price) * 100) : 0;
+    const aiScore = (carModel.aiScore || 8.5).toFixed(1);
 
     return (
-        <div className="bg-white rounded-[2rem] p-6 shadow-[0_10px_40px_rgba(0,0,0,0.04)] hover:shadow-[0_20px_60px_rgba(0,0,0,0.08)] transition-all duration-500 group flex flex-col relative border border-zinc-100/50">
-            {/* Image Container */}
-            <div className="aspect-[1.4/1] rounded-[1.5rem] mb-8 relative bg-zinc-50">
-                <div className="w-full h-full rounded-[1.5rem] overflow-hidden">
-                    <img
-                        src={displayImage}
-                        alt={trim.model?.name}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                        referrerPolicy="no-referrer"
-                    />
+        <div className="bg-white rounded-[2.5rem] p-5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_25px_60px_rgb(0,0,0,0.08)] transition-all duration-700 group flex flex-col relative border border-zinc-100/80 overflow-hidden h-full">
+            {/* Image Container with Zoom effect */}
+            <div className="aspect-[1.5/1] rounded-[2rem] mb-6 relative bg-zinc-50 overflow-hidden">
+                <Image
+                    src={displayImage}
+                    alt={`${carModel.brand.name} ${carModel.name}`}
+                    fill
+                    className="object-cover group-hover:scale-110 transition-transform duration-1000"
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                />
+
+                {/* Brand Logo Overlay - Top Left */}
+                <div className="absolute top-4 left-4 z-10 w-11 h-11 bg-white/90 backdrop-blur-md rounded-2xl flex items-center justify-center border border-white/20 shadow-sm transition-transform duration-500 group-hover:scale-110">
+                    <img src={brandLogo} alt={carModel.brand.name} className="w-7 h-7 object-contain grayscale group-hover:grayscale-0 transition-all" />
                 </div>
 
-                {/* AI Score Badge - Floating Top Right Edge */}
-                <div className="absolute -top-3 -right-3 z-10 pointer-events-none">
-                    <div className="w-14 h-14 bg-white rounded-full flex items-center justify-center shadow-[0_10px_20px_rgba(16,185,129,0.3)] border-[3px] border-emerald-500 ring-4 ring-white pointer-events-auto">
-                        <span className="text-base font-black text-zinc-900">{(trim.model?.aiScore || 8.5).toFixed(1)}</span>
-                    </div>
-                </div>
-            </div>
-
-            {/* Content */}
-            <div className="px-2 mb-8">
-                <h3 className="text-2xl font-black text-zinc-900 mb-6 tracking-tight">
-                    {trim.model?.brand?.name} {trim.model?.name}
-                </h3>
-
-                <div className="flex items-center gap-8 text-zinc-500">
-                    <div className="flex items-center gap-2.5">
-                        <Zap className="w-5 h-5 text-emerald-500 fill-emerald-500/10" />
-                        <span className="text-sm font-bold">{trim.specs?.moteur?.energie || "Électrique"}</span>
-                    </div>
-                    <div className="flex items-center gap-2.5">
-                        <Wrench className="w-5 h-5 text-emerald-500 fill-emerald-500/10" />
-                        <span className="text-sm font-bold">{trim.model?.maintCost || 600} DH/an</span>
-                    </div>
-                </div>
-            </div>
-
-            {/* Divider */}
-            <div className="h-px bg-zinc-100 w-full mb-8" />
-
-            {/* Footer Row */}
-            <div className="px-2 flex items-center justify-between mt-auto">
-                <div className="flex flex-col">
-                    <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-1">
-                        {trim.isPromoted && trim.promotionalPrice ? "EN PROMO" : "À PARTIR DE"}
-                    </span>
-                    {trim.isPromoted && trim.promotionalPrice ? (
-                        <div className="flex flex-col">
-                            <span className="text-sm font-bold text-zinc-400 line-through decoration-red-500/50 h-5" suppressHydrationWarning>
-                                {trim.price.toLocaleString("fr-FR")}
-                            </span>
-                            <span className="text-2xl font-black text-emerald-600 tracking-tight" suppressHydrationWarning>
-                                {trim.promotionalPrice.toLocaleString("fr-FR")} DH
-                            </span>
+                {/* AI Rating Badge - Top Right */}
+                <div className="absolute top-2 right-2 z-10">
+                    <div className="px-3 py-1.5 bg-zinc-900/90 backdrop-blur-xl border border-white/10 rounded-2xl flex items-center gap-2 shadow-2xl ring-1 ring-white/20">
+                        <div className="flex flex-col items-center leading-none">
+                            <span className="text-[8px] font-black text-emerald-400 uppercase tracking-tighter mb-0.5">AI RATING</span>
+                            <div className="flex items-center gap-1">
+                                <Star className="w-3 h-3 text-amber-500 fill-amber-500" />
+                                <span className="text-sm font-black text-white">{aiScore}</span>
+                            </div>
                         </div>
-                    ) : (
-                        <span className="text-2xl font-black text-zinc-900 tracking-tight mt-5" suppressHydrationWarning>
-                            {trim.price.toLocaleString("fr-FR")} DH
-                        </span>
-                    )}
+                    </div>
                 </div>
 
-                <div className="flex gap-3">
-                    <button
-                        onClick={() => onCompare(trim)}
-                        className={`p-4 rounded-2xl border-2 transition-all ${isComparing ? "bg-emerald-500 border-emerald-500 text-white shadow-lg" : "border-zinc-50 text-zinc-400 hover:text-zinc-900 hover:bg-zinc-50"}`}
-                        title="Comparer"
-                    >
-                        <Scale className="w-5 h-5" />
+                {/* Promotion Badge - Bottom Left */}
+                {hasPromo && (
+                    <div className="absolute bottom-4 left-4 z-10 flex items-center gap-2">
+                        <div className="px-3 py-1.5 bg-emerald-500 text-white text-[9px] font-black uppercase tracking-widest rounded-full shadow-lg shadow-emerald-500/20 ring-4 ring-emerald-500/10">
+                            Promo
+                        </div>
+                        <div className="px-2.5 py-1.5 bg-amber-400 text-zinc-900 text-[9px] font-black rounded-full shadow-lg shadow-amber-400/20">
+                            -{promoPercentage}%
+                        </div>
+                    </div>
+                )}
+            </div>
+
+            {/* Content Container */}
+            <div className="flex-1 px-1 flex flex-col">
+                <div className="flex items-start justify-between mb-2">
+                    <div className="flex flex-col">
+                        <span className="text-[10px] font-bold text-emerald-500 uppercase tracking-[0.2em] mb-1">{carModel.category}</span>
+                        <h3 className="text-lg md:text-xl font-black text-zinc-900 tracking-tight leading-tight group-hover:text-emerald-600 transition-colors">
+                            {carModel.brand.name} {carModel.name} <span className="text-zinc-400 font-medium text-base">{trim.name}</span>
+                        </h3>
+                    </div>
+                </div>
+
+                {/* Price Section - Inline */}
+                <div className="mt-4 mb-6">
+                    <div className="flex items-baseline gap-3 flex-wrap">
+                        {hasPromo ? (
+                            <>
+                                <div className="flex items-baseline gap-1.5">
+                                    <span className="text-2xl font-black text-emerald-600 tracking-tight leading-none">
+                                        {(trim.promotionalPrice || 0).toLocaleString("fr-FR")}
+                                    </span>
+                                    <span className="text-[10px] font-black text-emerald-600 uppercase">DH</span>
+                                </div>
+                                <span className="text-xs font-bold text-zinc-400 line-through decoration-red-400/50">
+                                    {(trim.price || 0).toLocaleString("fr-FR")} DH
+                                </span>
+                            </>
+                        ) : (
+                            <>
+                                <div className="flex items-baseline gap-1.5">
+                                    <span className="text-2xl font-black text-zinc-900 tracking-tight leading-none">
+                                        {(trim.price || 0).toLocaleString("fr-FR")}
+                                    </span>
+                                    <span className="text-[10px] font-black text-zinc-900 uppercase">DH</span>
+                                </div>
+                                <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">À partir de</span>
+                            </>
+                        )}
+                    </div>
+                </div>
+
+                {/* Actions Grid */}
+                <div className="mt-auto grid grid-cols-5 gap-2 pt-6 border-t border-zinc-50">
+                    {/* Noter (1/5) */}
+                    <button className="col-span-1 h-12 rounded-2xl border-2 border-zinc-100 text-zinc-400 hover:border-amber-400 hover:text-amber-500 hover:bg-amber-50 transition-all duration-300 flex items-center justify-center group/btn" title="Noter">
+                        <Star className="w-5 h-5 group-hover/btn:scale-110 transition-transform" />
                     </button>
+
+                    {/* Comparer (1/5) */}
+                    {onCompare && (
+                        <button
+                            onClick={(e) => {
+                                e.preventDefault();
+                                onCompare(trim);
+                            }}
+                            className={`col-span-1 h-12 rounded-2xl flex items-center justify-center border-2 transition-all duration-300 ${isComparing ? "bg-emerald-500 border-emerald-500 text-white shadow-lg" : "border-zinc-100 text-zinc-400 hover:border-emerald-500 hover:text-emerald-500 hover:bg-emerald-50"}`}
+                            title="Comparer"
+                        >
+                            <Scale className="w-5 h-5" />
+                        </button>
+                    )}
+
+                    {/* Découvrir (3/5 or 4/5) */}
                     <Link
                         href={detailHref}
-                        className="px-8 py-4 rounded-2xl bg-zinc-900 text-white text-[11px] font-black uppercase tracking-widest hover:bg-emerald-600 transition-all shadow-xl shadow-zinc-200 flex items-center justify-center shrink-0"
+                        className={`${onCompare ? "col-span-3" : "col-span-4"} h-12 rounded-2xl bg-zinc-900 text-white text-[10px] font-black uppercase tracking-widest hover:bg-emerald-600 transition-all duration-500 shadow-xl shadow-zinc-200 flex items-center justify-center gap-2 group/btn`}
                     >
-                        Détails
+                        Découvrir
+                        <ArrowUpRight className="w-4 h-4 group-hover/btn:translate-x-0.5 group-hover/btn:-translate-y-0.5 transition-transform" />
                     </Link>
                 </div>
             </div>
+
+            {/* Full Card Link overlay (except for buttons) */}
+            <Link href={detailHref} className="absolute inset-0 z-0" aria-label={`Détails de ${carModel.brand.name} ${carModel.name}`} />
         </div>
     );
 };

@@ -1,8 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
+import { auth } from "@/auth";
+
+const ALLOWED_MIME_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif", "image/avif"];
+const MAX_FILE_SIZE_MB = 5;
+const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
 
 export async function POST(req: NextRequest) {
+    // Auth guard – admin only
+    const session = await auth();
+    if (!session?.user || !["ADMIN", "SUPER_ADMIN"].includes(session.user.role as string)) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     try {
         const formData = await req.formData();
         const file = formData.get("file") as File;
@@ -12,6 +23,16 @@ export async function POST(req: NextRequest) {
 
         if (!file) {
             return NextResponse.json({ error: "No file uploaded" }, { status: 400 });
+        }
+
+        // Validate MIME type
+        if (!ALLOWED_MIME_TYPES.includes(file.type)) {
+            return NextResponse.json({ error: "Invalid file type. Only images (JPEG, PNG, WebP, GIF, AVIF) are allowed." }, { status: 400 });
+        }
+
+        // Validate file size
+        if (file.size > MAX_FILE_SIZE_BYTES) {
+            return NextResponse.json({ error: `File too large. Maximum size is ${MAX_FILE_SIZE_MB}MB.` }, { status: 400 });
         }
 
         const bytes = await file.arrayBuffer();

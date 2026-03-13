@@ -1,11 +1,14 @@
 "use server";
 
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/lib/db";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { redirect } from "next/navigation";
 
-const JWT_SECRET = process.env.AUTH_SECRET || "your-secret-key";
+if (!process.env.AUTH_SECRET) {
+    throw new Error("AUTH_SECRET environment variable must be set");
+}
+const JWT_SECRET = process.env.AUTH_SECRET;
 
 export async function signupFromInvitation(formData: FormData) {
     const token = formData.get("token") as string;

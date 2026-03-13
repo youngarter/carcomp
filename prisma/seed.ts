@@ -11,268 +11,186 @@ const prisma = new PrismaClient({
 });
 
 async function main() {
-    console.log('Seeding database...');
+    console.log("🚀 Début du seeding...");
 
-    // 0. Seed Roles and Permissions
-    const editCar = await prisma.permission.upsert({
-        where: { name: 'EDIT_CAR' },
-        update: {},
-        create: { name: 'EDIT_CAR' },
-    });
-
-    const deleteCar = await prisma.permission.upsert({
-        where: { name: 'DELETE_CAR' },
-        update: {},
-        create: { name: 'DELETE_CAR' },
-    });
-
-    const manageUsers = await prisma.permission.upsert({
-        where: { name: 'MANAGE_USERS' },
-        update: {},
-        create: { name: 'MANAGE_USERS' },
-    });
-
-    const superAdminRole = await prisma.role.upsert({
-        where: { name: 'SUPER_ADMIN' },
-        update: {},
-        create: {
-            name: 'SUPER_ADMIN',
-            permissions: {
-                connect: [{ id: editCar.id }, { id: deleteCar.id }, { id: manageUsers.id }],
-            },
-        },
-    });
-
-    const adminRole = await prisma.role.upsert({
-        where: { name: 'ADMIN' },
-        update: {},
-        create: {
-            name: 'ADMIN',
-            permissions: {
-                connect: [{ id: editCar.id }],
-            },
-        },
-    });
-
-    const userRole = await prisma.role.upsert({
-        where: { name: 'USER' },
-        update: {},
-        create: {
-            name: 'USER',
-        },
-    });
-
-    // Create Initial Super Admin
-    const hashedPassword = await bcrypt.hash('admin123', 10);
-    await prisma.user.upsert({
-        where: { email: 'admin@carcomp.com' },
-        update: {},
-        create: {
-            email: 'admin@carcomp.com',
-            name: 'Super Admin',
-            password: hashedPassword,
-            roleId: superAdminRole.id,
-        },
-    });
-
-    // 1. Reset Content Data (Optional but good for clean seeds)
-    // Note: Order matters due to foreign key constraints
+    // 1. Nettoyage de la base de données
+    await prisma.finitionPriceHistory.deleteMany();
     await prisma.review.deleteMany();
+    await prisma.priceHistory.deleteMany();
     await prisma.finition.deleteMany();
     await prisma.carModel.deleteMany();
     await prisma.brand.deleteMany();
 
-    // 2. Create Brands
-    const tesla = await prisma.brand.upsert({
-        where: { name: 'Tesla' },
-        update: {},
-        create: {
-            name: 'Tesla',
-            slug: 'tesla',
-            logo: 'https://upload.wikimedia.org/wikipedia/commons/e/e8/Tesla_logo.png',
-        },
-    });
+    const brandsData = [
+        { name: "Toyota", origin: "Japon", domain: "toyota.com" },
+        { name: "Volkswagen", origin: "Allemagne", domain: "volkswagen.com" },
+        { name: "BMW", origin: "Allemagne", domain: "bmw.com" },
+        { name: "Mercedes-Benz", origin: "Allemagne", domain: "mercedes-benz.com" },
+        { name: "Hyundai", origin: "Corée du Sud", domain: "hyundai.com" },
+        { name: "Kia", origin: "Corée du Sud", domain: "kia.com" },
+        { name: "Dacia", origin: "Roumanie (Groupe Renault)", domain: "dacia.com" },
+        { name: "Peugeot", origin: "France", domain: "peugeot.com" },
+        { name: "Renault", origin: "France", domain: "renault.com" },
+        { name: "Tesla", origin: "USA", domain: "tesla.com" },
+    ];
 
-    const bmw = await prisma.brand.upsert({
-        where: { name: 'BMW' },
-        update: {},
-        create: {
-            name: 'BMW',
-            slug: 'bmw',
-            logo: 'https://upload.wikimedia.org/wikipedia/commons/4/44/BMW.svg',
-        },
-    });
+    const categories = ["Citadine", "Compacte", "SUV", "Berline", "Electrique"];
 
-    const toyota = await prisma.brand.upsert({
-        where: { name: 'Toyota' },
-        update: {},
-        create: {
-            name: 'Toyota',
-            slug: 'toyota',
-            logo: 'https://upload.wikimedia.org/wikipedia/commons/9/9d/Toyota_car_logo.svg',
-        },
-    });
+    const modelsByBrand: Record<string, any[]> = {
+        Toyota: [
+            { name: "Yaris", cat: "Citadine", img: "https://images.unsplash.com/photo-1621335381773-4f9a3993e50b" },
+            { name: "Corolla", cat: "Compacte", img: "https://images.unsplash.com/photo-1623101691157-550608632616" },
+            { name: "RAV4", cat: "SUV", img: "https://images.unsplash.com/photo-1606248358210-67634f191f63" },
+        ],
+        BMW: [
+            { name: "Serie 1", cat: "Compacte", img: "https://images.unsplash.com/photo-1556122071-e404970c7ff2" },
+            { name: "Serie 3", cat: "Berline", img: "https://images.unsplash.com/photo-1555215695-3004980ad54e" },
+            { name: "X1", cat: "SUV", img: "https://images.unsplash.com/photo-1619330085626-444498308871" },
+        ],
+        Dacia: [
+            { name: "Sandero", cat: "Citadine", img: "https://images.unsplash.com/photo-1655716173007-8854087e3831" },
+            { name: "Duster", cat: "SUV", img: "https://images.unsplash.com/photo-1551522435-a13afa10f103" },
+        ],
+        Tesla: [
+            { name: "Model 3", cat: "Electrique", img: "https://images.unsplash.com/photo-1560958089-b8a1929cea89" },
+            { name: "Model Y", cat: "SUV", img: "https://images.unsplash.com/photo-1619767886558-efdc259cde1a" },
+        ],
+        Peugeot: [
+            { name: "208", cat: "Citadine", img: "https://images.unsplash.com/photo-1611016186353-9af58c69a533" },
+            { name: "3008", cat: "SUV", img: "https://images.unsplash.com/photo-1622321453401-496359569651" },
+        ],
+    };
 
-    const mercedes = await prisma.brand.upsert({
-        where: { name: 'Mercedes-Benz' },
-        update: {},
-        create: {
-            name: 'Mercedes-Benz',
-            slug: 'mercedes-benz',
-            logo: 'https://upload.wikimedia.org/wikipedia/id/thumb/9/90/Mercedes-Benz_logo.svg/1200px-Mercedes-Benz_logo.svg.png',
-        },
-    });
+    const allFinitions = ["Active", "Style", "Premium", "Luxury", "M Sport", "GT Line"];
 
-    // 3. Create Car Models
-    const model3 = await prisma.carModel.create({
-        data: {
-            name: 'Model 3',
-            slug: 'model-3',
-            brandId: tesla.id,
-            category: 'Berline',
-            image: 'https://www.tesla.com/sites/default/files/images/model-3/model-3-hero.jpg',
-            aiScore: 9.1,
-            reliability: 8.5,
-            maintCost: 450,
-        },
-    });
+    for (const b of brandsData) {
+        const brand = await prisma.brand.create({
+            data: {
+                name: b.name,
+                slug: b.name.toLowerCase().replace(" ", "-"),
+                origin: b.origin,
+                logo: `https://logo.clearbit.com/${b.domain}`,
+                logoAlt: `${b.name} official logo`,
+                description: `${b.name} est un constructeur automobile majeur proposant des véhicules fiables et innovants.`,
+            },
+        });
 
-    const x5 = await prisma.carModel.create({
-        data: {
-            name: 'X5',
-            slug: 'x5',
-            brandId: bmw.id,
-            category: 'SUV',
-            image: 'https://www.bmw.fr/content/dam/bmw/common/all-models/x-series/x5/2023/highlights/bmw-x5-highlights-desktop-01.jpg',
-            aiScore: 8.7,
-            reliability: 7.8,
-            maintCost: 1400,
-        },
-    });
+        // Modèles par défaut si non spécifiés dans modelsByBrand
+        const modelsToCreate = modelsByBrand[b.name] || [
+            { name: `${b.name} Model A`, cat: "Compacte", img: "https://images.unsplash.com/photo-1503376780353-7e6692767b70" },
+            { name: `${b.name} Model B`, cat: "SUV", img: "https://images.unsplash.com/photo-1533473359331-0135ef1b58bf" },
+        ];
 
-    const rav4 = await prisma.carModel.create({
-        data: {
-            name: 'RAV4',
-            slug: 'rav4',
-            brandId: toyota.id,
-            category: 'SUV',
-            image: 'https://www.toyota.fr/content/dam/toyota/nmsc/france/gamme/rav4-hybride/rav4-hybride-2023-selection.png',
-            aiScore: 8.4,
-            reliability: 9.6,
-            maintCost: 650,
-        },
-    });
+        for (const m of modelsToCreate) {
+            const startPrice = m.cat === "Citadine" ? 140000 : m.cat === "SUV" ? 320000 : 250000;
 
-    // 4. Create Finitions
-    // Model 3 Finitions
-    await prisma.finition.create({
-        data: {
-            name: 'Standard Range',
-            slug: 'model-3-standard-range',
-            carModelId: model3.id,
-            price: 39990,
-            motorisation: 'RWD 283ch',
-            energy: 'Electrique',
-            transmission: 'Propulsion',
-            power: 283,
-            acceleration: 6.1,
-            maxSpeed: 201,
-            bodyType: 'Berline',
-            seats: 5,
-            abs: true,
-            esp: true,
-            cameraRecul: true,
-            ecranTactile: true,
-            navigationGps: true,
-            bluetooth: true,
-            appleCarplay: false, // Tesla doesn't have it natively
-            phares: 'LED',
-        },
-    });
+            const carModel = await prisma.carModel.create({
+                data: {
+                    name: m.name,
+                    slug: `${brand.slug}-${m.name.toLowerCase().replace(" ", "-")}`,
+                    brandId: brand.id,
+                    category: m.cat,
+                    image: m.img,
+                    aiScore: 7.0 + Math.random() * 2,
+                    reliability: b.name === "Toyota" ? 9.0 : 7.0 + Math.random() * 2,
+                    maintCost: b.name === "BMW" ? 8.5 : 5.0 + Math.random() * 3,
+                    startPrice: startPrice,
+                    endPrice: startPrice * 1.5,
+                },
+            });
 
-    await prisma.finition.create({
-        data: {
-            name: 'Long Range AWD',
-            slug: 'model-3-long-range-awd',
-            carModelId: model3.id,
-            price: 49990,
-            motorisation: 'AWD 498ch',
-            energy: 'Electrique',
-            transmission: 'Intégrale',
-            power: 498,
-            acceleration: 4.4,
-            maxSpeed: 201,
-            bodyType: 'Berline',
-            seats: 5,
-            abs: true,
-            esp: true,
-            cameraRecul: true,
-            ecranTactile: true,
-            navigationGps: true,
-            phares: 'LED',
-            vitresSurteintees: true,
-        },
-    });
+            // Price History
+            for (const year of [2023, 2024, 2025]) {
+                await prisma.priceHistory.create({
+                    data: {
+                        carModelId: carModel.id,
+                        year,
+                        startPrice: startPrice * (0.9 + (year - 2023) * 0.05),
+                        endPrice: startPrice * 1.4 * (0.9 + (year - 2023) * 0.05),
+                    },
+                });
+            }
 
-    // X5 Finitions
-    await prisma.finition.create({
-        data: {
-            name: 'xDrive50e M Sport',
-            slug: 'x5-xdrive50e-m-sport',
-            carModelId: x5.id,
-            price: 108350,
-            motorisation: 'Hybride Rechargeable 489ch',
-            energy: 'Hybride',
-            transmission: 'Automatique',
-            power: 489,
-            acceleration: 4.8,
-            maxSpeed: 250,
-            consoMixed: 0.8,
-            co2Emission: 18,
-            bodyType: 'SUV',
-            seats: 5,
-            abs: true,
-            esp: true,
-            climatisation: 'Tri-zone',
-            systemeAudio: 'Harman Kardon',
-            navigationGps: true,
-            cameraRecul: true,
-            radarStationnement: 'Avant/Arrière',
-            toit: 'Ouvrant',
-            jantesAlu: '21 pouces',
-        },
-    });
+            // Reviews
+            await prisma.review.createMany({
+                data: [
+                    {
+                        carModelId: carModel.id,
+                        rating: 4,
+                        comment: `Très satisfait de ma ${m.name}, excellente tenue de route.`,
+                        userName: "Mehdi Alami",
+                        status: "APPROVED",
+                    },
+                    {
+                        carModelId: carModel.id,
+                        rating: 5,
+                        comment: "Rapport qualité/prix imbattable pour le marché marocain.",
+                        userName: "Sara Tazi",
+                        status: "APPROVED",
+                    },
+                    {
+                        carModelId: carModel.id,
+                        rating: 4,
+                        comment: `Analyse IA : Ce modèle excelle par son efficacité énergétique et sa valeur de revente.`,
+                        isAiSummary: true,
+                        status: "APPROVED",
+                    },
+                ],
+            });
 
-    // 5. Create Reviews
-    await prisma.review.create({
-        data: {
-            carModelId: model3.id,
-            rating: 5,
-            comment: 'Meilleur rapport qualité/prix pour une électrique aujourd\'hui.',
-            userName: 'Thomas R.',
-        },
-    });
+            // Finitions (Trims)
+            const numTrims = Math.floor(Math.random() * 2) + 1; // 1 to 2 trims
+            for (let i = 0; i < numTrims; i++) {
+                const trimName = allFinitions[i];
+                const isElectric = m.cat === "Electrique";
 
-    await prisma.review.create({
-        data: {
-            carModelId: model3.id,
-            rating: 4,
-            comment: 'Performance incroyable, mais l\'ergonomie tout écran demande un temps d\'adaptation.',
-            userName: 'Sophie M.',
-            isAiSummary: false,
-        },
-    });
+                const finition = await prisma.finition.create({
+                    data: {
+                        name: trimName,
+                        slug: `${carModel.slug}-${trimName.toLowerCase()}`,
+                        carModelId: carModel.id,
+                        startPrice: startPrice + i * 40000,
+                        energy: isElectric ? "Electrique" : "Hybride",
+                        transmission: "Automatique",
+                        power: isElectric ? 204 : 115 + i * 20,
+                        acceleration: isElectric ? 7.2 : 9.5,
+                        maxSpeed: isElectric ? 160 : 190,
+                        consoMixed: isElectric ? 0 : 4.5,
+                        co2Emission: isElectric ? 0 : 110,
+                        abs: true,
+                        esp: true,
+                        isofix: true,
+                        cameraRecul: i > 0, // Uniquement sur les finitions hautes
+                        ecranTactile: true,
+                        navigationGps: i > 0,
+                        appleCarplay: true,
+                        image: m.img,
+                        images: [m.img, m.img, m.img],
+                    },
+                });
 
-    await prisma.review.create({
-        data: {
-            carModelId: x5.id,
-            rating: 5,
-            comment: 'L\'hybride est parfait pour la ville et les longs trajets. Finition exemplaire.',
-            userName: 'Marc-Antoine',
-        },
-    });
+                // Ajouter une promotion aléatoire (1 chance sur 6)
+                if (Math.random() > 0.85) {
+                    await prisma.finitionPriceHistory.create({
+                        data: {
+                            finitionId: finition.id,
+                            price: finition.startPrice || 0,
+                            isPromotion: true,
+                            promotionalPrice: (finition.startPrice || 0) * 0.92, // -8%
+                            startDate: new Date(),
+                            endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // +30 jours
+                        },
+                    });
+                    await prisma.finition.update({
+                        where: { id: finition.id },
+                        data: { isPromoted: true },
+                    });
+                }
+            }
+        }
+    }
 
-    console.log('Seeding complete.');
+    console.log("✅ Seeding terminé avec succès !");
 }
 
 main()

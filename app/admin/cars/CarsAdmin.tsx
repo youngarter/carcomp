@@ -128,7 +128,7 @@ export default function CarsAdmin() {
                         />
                     </div>
                     <Link
-                        href="/admin/settings/cars/new"
+                        href="/admin/cars/new"
                         className="flex items-center gap-2 px-6 py-4 bg-zinc-900 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-zinc-800 transition-all shadow-lg shadow-zinc-200"
                     >
                         <Plus className="w-4 h-4" />
@@ -221,7 +221,7 @@ export default function CarsAdmin() {
                                             {car.isDeadModel ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
                                         </button>
                                         <Link
-                                            href={`/admin/settings/cars/${car.slug}/edit`}
+                                            href={`/admin/cars/${car.slug}/edit`}
                                             className="p-2 bg-zinc-100 text-zinc-600 rounded-lg hover:bg-zinc-200 transition-all"
                                             title="Modifier"
                                         >

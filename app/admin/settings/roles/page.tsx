@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/lib/db";
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";

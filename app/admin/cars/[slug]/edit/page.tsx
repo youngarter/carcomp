@@ -12,7 +12,7 @@ import {
     getFinitionBySlug,
     getBrands,
     getModelsByBrand
-} from "../../../../../car/actions";
+} from "@/app/car/actions";
 
 export default function EditCarPage({ params }: { params: Promise<{ slug: string }> }) {
     const { slug } = use(params);
@@ -271,7 +271,7 @@ export default function EditCarPage({ params }: { params: Promise<{ slug: string
         setLoading(true);
         const res = await updateCarStepByStep(finitionId, formData);
         if (res.success) {
-            window.location.href = "/admin/settings/cars";
+            window.location.href = "/admin/cars";
         } else {
             alert("Erreur: " + res.error);
             setLoading(false);
@@ -416,7 +416,7 @@ export default function EditCarPage({ params }: { params: Promise<{ slug: string
             <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-zinc-100">
                 <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex justify-between items-center h-20">
-                        <Link href="/admin/settings/cars" className="flex items-center gap-2 text-zinc-500 hover:text-zinc-900 transition-colors group">
+                        <Link href="/admin/cars" className="flex items-center gap-2 text-zinc-500 hover:text-zinc-900 transition-colors group">
                             <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
                             <span className="font-bold">Retour aux réglages</span>
                         </Link>

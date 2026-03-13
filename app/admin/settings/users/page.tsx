@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/lib/db";
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
@@ -169,8 +169,8 @@ export default async function UsersPage() {
                                                 <td className="px-8 py-6 text-sm text-neutral-500 font-medium italic">{u.email}</td>
                                                 <td className="px-8 py-6">
                                                     <div className={`flex items-center gap-2 px-3 py-1 rounded-full border w-fit font-black text-[9px] uppercase tracking-widest shadow-sm ${u.role?.name === 'SUPER_ADMIN'
-                                                            ? 'bg-blue-600 text-white border-blue-600'
-                                                            : 'bg-white border-neutral-200 text-neutral-900'
+                                                        ? 'bg-blue-600 text-white border-blue-600'
+                                                        : 'bg-white border-neutral-200 text-neutral-900'
                                                         }`}>
                                                         <Shield className={`w-3 h-3 ${u.role?.name === 'SUPER_ADMIN' ? 'text-blue-200' : 'text-neutral-400'}`} />
                                                         {u.role?.name || "Member"}

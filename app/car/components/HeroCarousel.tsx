@@ -6,6 +6,7 @@ import Autoplay from "embla-carousel-autoplay";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronRight, ChevronLeft } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import { getHeroSlides } from "../actions";
 
 const HeroCarousel = () => {
@@ -74,10 +75,13 @@ const HeroCarousel = () => {
                         <div key={slide.id} className="relative flex-[0_0_100%] w-full h-full">
                             {/* Background Image full screen */}
                             <div className="absolute inset-0 z-0 bg-zinc-900">
-                                <img
+                                <Image
                                     src={slide.image}
-                                    alt={slide.title}
-                                    className="w-full h-full object-cover opacity-80 mix-blend-lighten select-none"
+                                    alt={slide.imageAlt || slide.title}
+                                    fill
+                                    priority={index === 0}
+                                    sizes="100vw"
+                                    className="object-cover opacity-80 mix-blend-lighten select-none"
                                 />
                                 {/* Premium Gradient Overlay for Readability */}
                                 <div className="absolute inset-0 bg-gradient-to-r from-zinc-950/95 via-zinc-950/60 to-transparent" />
@@ -96,7 +100,9 @@ const HeroCarousel = () => {
                                             className="max-w-3xl text-white pt-20"
                                         >
                                             <div className="inline-flex items-center gap-4 px-5 py-2.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 mb-8 shadow-2xl">
-                                                <img src={slide.brandLogo} alt={`${slide.title} Logo`} className="h-5 w-auto object-contain brightness-0 invert" />
+                                                {slide.brandLogo && (
+                                                    <Image src={slide.brandLogo} alt={`${slide.title} Logo`} width={120} height={20} className="h-5 w-auto object-contain brightness-0 invert" />
+                                                )}
                                                 <span className="text-xs font-black uppercase tracking-[0.2em] text-emerald-400">
                                                     {slide.subtitle}
                                                 </span>
@@ -112,7 +118,7 @@ const HeroCarousel = () => {
 
                                             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6 sm:gap-12">
                                                 <Link
-                                                    href="/car/compare"
+                                                    href={slide.url || "/car/compare"}
                                                     className="inline-flex items-center justify-center gap-3 px-10 py-5 rounded-full bg-emerald-500 text-white font-black uppercase tracking-widest text-sm hover:bg-emerald-400 transition-all shadow-[0_0_40px_rgba(16,185,129,0.4)] hover:shadow-[0_0_60px_rgba(16,185,129,0.5)] active:scale-95"
                                                 >
                                                     Découvrir <ChevronRight className="w-5 h-5" />
