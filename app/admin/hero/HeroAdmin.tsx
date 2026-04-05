@@ -14,12 +14,7 @@ import {
     X,
     Save
 } from "lucide-react";
-import {
-    getHeroSlides,
-    createHeroSlide,
-    updateHeroSlide,
-    deleteHeroSlide
-} from "@/app/car/actions";
+import { getHeroSlides, createHeroSlide, updateHeroSlide, deleteHeroSlide } from "@/lib/actions/hero.actions";
 
 export default function HeroAdmin() {
     const [slides, setSlides] = useState<any[]>([]);

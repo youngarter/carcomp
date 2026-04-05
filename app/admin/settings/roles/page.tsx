@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { ChevronLeft, Info } from "lucide-react";
 import RolesClient from "./RolesClient";
-import { ensurePermissions } from "@/lib/actions/admin";
+import { ensurePermissions } from "@/lib/actions/admin.actions";
 
 export default async function RolesPage() {
     const session = await auth();

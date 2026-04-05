@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { updateRolePermissions } from "@/lib/actions/admin";
+import { updateRolePermissions } from "@/lib/actions/admin.actions";
 import { Shield, Loader2, X, Check, Zap } from "lucide-react";
 
 interface Permission {

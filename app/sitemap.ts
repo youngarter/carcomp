@@ -66,5 +66,21 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         console.error("Sitemap: Failed to fetch brands", err);
     }
 
-    return [...staticPages, ...finitionPages, ...brandPages];
+    // Dynamic: Article pages
+    let articlePages: MetadataRoute.Sitemap = [];
+    try {
+        const articles = await prisma.article.findMany({
+            select: { slug: true, updatedAt: true },
+        });
+        articlePages = articles.map((a) => ({
+            url: `${BASE_URL}/alaune/${a.slug}`,
+            lastModified: a.updatedAt,
+            changeFrequency: "weekly" as const,
+            priority: 0.9,
+        }));
+    } catch (err) {
+        console.error("Sitemap: Failed to fetch articles", err);
+    }
+
+    return [...staticPages, ...finitionPages, ...brandPages, ...articlePages];
 }

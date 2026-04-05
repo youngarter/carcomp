@@ -19,7 +19,7 @@ export default async function AdminPage() {
 
     const stats = [
         { label: "Total Models", value: await prisma.carModel.count(), icon: LayoutDashboard, color: "text-blue-600", bg: "bg-blue-50" },
-        { label: "Active Finitions", value: await prisma.finition.count({ where: { isDeadModel: false } }), icon: ShieldCheck, color: "text-emerald-600", bg: "bg-emerald-50" },
+        { label: "Active Finitions", value: await prisma.finition.count({ where: { isDiscontinued: false } }), icon: ShieldCheck, color: "text-emerald-600", bg: "bg-emerald-50" },
         { label: "Total Brands", value: await prisma.brand.count(), icon: Zap, color: "text-amber-600", bg: "bg-amber-50" },
     ];
 

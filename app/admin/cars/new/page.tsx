@@ -7,25 +7,22 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
-import {
-    createCarStepByStep,
-    getBrands,
-    getModelsByBrand,
-    getFinitionsByModel
-} from "@/app/car/actions";
+import { createCarStepByStep } from "@/lib/actions/car.actions";
+import { getBrands, getModelsByBrand } from "@/lib/actions/brand.actions";
+import { Brand, CarModel, Finition } from "@/app/generated/prisma";
+import BrandSelect from "@/components/admin/brands/BrandSelect";
+import { ChevronDown } from "lucide-react";
 
 export default function NewCarPage() {
     const [step, setStep] = useState(1);
     const [loading, setLoading] = useState(false);
 
-    // Data lists
-    const [brands, setBrands] = useState<any[]>([]);
-    const [models, setModels] = useState<any[]>([]);
-    const [finitions, setFinitions] = useState<any[]>([]);
+    const [brands, setBrands] = useState<Brand[]>([]);
+    const [models, setModels] = useState<CarModel[]>([]);
 
     // Selection State
-    const [selectedBrand, setSelectedBrand] = useState<any>(null);
-    const [selectedModel, setSelectedModel] = useState<any>(null);
+    const [selectedBrand, setSelectedBrand] = useState<Brand | null>(null);
+    const [selectedModel, setSelectedModel] = useState<CarModel | null>(null);
 
     // Form State
     const [formData, setFormData] = useState<any>({
@@ -37,6 +34,7 @@ export default function NewCarPage() {
         reliability: "8.0",
         maintCost: "500",
         finitionName: "",
+        phaseType: "new",
         year: "2025",
         price: "",
         isPromoted: false,
@@ -106,15 +104,16 @@ export default function NewCarPage() {
         barresToit: false, vitresSurteintees: true,
     });
 
+    const loadBrands = async () => {
+        const b = await getBrands();
+        setBrands(b);
+    };
+
     useEffect(() => {
-        async function init() {
-            const b = await getBrands();
-            setBrands(b);
-        }
-        init();
+        loadBrands();
     }, []);
 
-    const handleBrandSelect = async (brand: any) => {
+    const handleBrandSelect = async (brand: Brand) => {
         setSelectedBrand(brand);
         // Clear previous model/finition data when brand changes
         setFormData({
@@ -126,12 +125,12 @@ export default function NewCarPage() {
             finitionName: "",
             finitionId: ""
         });
-        const m = await getModelsByBrand(brand.id);
+        const m = await getModelsByBrand(brand.id as string);
         setModels(m);
-        setStep(2);
+        // Note: We don't auto-jump to step 2 anymore to allow previewing selection
     };
 
-    const handleModelSelect = async (model: any) => {
+    const handleModelSelect = async (model: CarModel) => {
         setSelectedModel(model);
         setFormData({
             ...formData,
@@ -146,8 +145,6 @@ export default function NewCarPage() {
             finitionName: "",
             finitionId: ""
         });
-        const f = await getFinitionsByModel(model.id);
-        setFinitions(f);
         setStep(3);
     };
 
@@ -166,6 +163,7 @@ export default function NewCarPage() {
         uploadData.append("file", file);
         uploadData.append("brand", formData.brandName || "common");
         uploadData.append("model", formData.modelName || "common");
+        uploadData.append("phaseType", formData.phaseType || "new");
         uploadData.append("year", formData.year || "2025");
         uploadData.append("finition", formData.finitionName || "standard");
 
@@ -416,40 +414,28 @@ export default function NewCarPage() {
                                 <p className="text-zinc-500 font-medium italic">Sélectionnez une marque existante ou créez-en une nouvelle.</p>
                             </div>
 
-                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                                {brands.map((b) => (
-                                    <button
-                                        key={b.id}
-                                        onClick={() => handleBrandSelect(b)}
-                                        className="p-8 bg-white rounded-3xl border border-black/5 shadow-sm hover:shadow-xl hover:border-emerald-500 transition-all group flex flex-col items-center gap-4"
+                            <div className="max-w-xl mx-auto">
+                                <BrandSelect
+                                    brands={brands}
+                                    selectedBrandId={selectedBrand?.id}
+                                    onSelect={handleBrandSelect}
+                                    onBrandCreated={loadBrands}
+                                />
+
+                                {selectedBrand && (
+                                    <motion.div
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        className="mt-12 flex justify-center"
                                     >
-                                        <div className="w-16 h-16 rounded-2xl bg-zinc-50 flex items-center justify-center text-zinc-400 group-hover:text-emerald-600 transition-colors">
-                                            <Car className="w-8 h-8" />
-                                        </div>
-                                        <span className="font-black text-sm uppercase tracking-wider">{b.name}</span>
-                                    </button>
-                                ))}
-                                <button
-                                    onClick={() => {
-                                        setSelectedBrand(null);
-                                        setFormData({
-                                            ...formData,
-                                            brandName: "",
-                                            brandId: "",
-                                            modelName: "",
-                                            modelId: "",
-                                            finitionName: "",
-                                            finitionId: ""
-                                        });
-                                        setStep(2);
-                                    }}
-                                    className="p-8 bg-zinc-900 rounded-3xl text-white shadow-xl hover:bg-zinc-800 transition-all flex flex-col items-center gap-4"
-                                >
-                                    <div className="w-16 h-16 rounded-2xl bg-white/10 flex items-center justify-center">
-                                        <Plus className="w-8 h-8" />
-                                    </div>
-                                    <span className="font-black text-sm uppercase tracking-wider">Nouvelle Marque</span>
-                                </button>
+                                        <button
+                                            onClick={() => setStep(2)}
+                                            className="px-12 py-5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-3xl font-black uppercase tracking-[0.2em] text-[10px] shadow-xl shadow-emerald-200 transition-all flex items-center gap-3 group"
+                                        >
+                                            Suivant <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                                        </button>
+                                    </motion.div>
+                                )}
                             </div>
                         </motion.div>
                     )}
@@ -668,18 +654,30 @@ export default function NewCarPage() {
 
                             {/* Basic Info */}
                             <section className="bg-white p-8 md:p-12 rounded-[40px] border border-black/5 shadow-sm">
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-8">
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 block ml-2">Nom de la version / finition <span className="text-red-500">*</span></label>
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 block ml-2">Nom de la finition <span className="text-red-500">*</span></label>
                                         <input
                                             value={formData.finitionName}
                                             onChange={(e) => updateFormData("finitionName", e.target.value)}
-                                            placeholder="Ex: GT Line, Premium Edition..."
+                                            placeholder="Ex: R-Line..."
                                             className="w-full px-6 py-4 rounded-2xl bg-zinc-50 border-none focus:ring-2 focus:ring-emerald-500/20 font-black"
                                         />
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 block ml-2">Année de sortie <span className="text-red-500">*</span></label>
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 block ml-2">Génération <span className="text-red-500">*</span></label>
+                                        <select
+                                            value={formData.phaseType}
+                                            onChange={(e) => updateFormData("phaseType", e.target.value)}
+                                            className="w-full px-6 py-4 rounded-2xl bg-zinc-50 border-none focus:ring-2 focus:ring-emerald-500/20 font-black appearance-none cursor-pointer"
+                                        >
+                                            <option value="new">Nouvelle (All-new)</option>
+                                            <option value="facelift">Facelift (Restylée)</option>
+                                            <option value="restyling">Phase 2 / Restyling</option>
+                                        </select>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 block ml-2">Année <span className="text-red-500">*</span></label>
                                         <input
                                             type="number"
                                             value={formData.year}
@@ -906,8 +904,8 @@ export default function NewCarPage() {
                         </motion.div>
                     )}
 
-                </AnimatePresence>
-            </main>
-        </div>
+                </AnimatePresence >
+            </main >
+        </div >
     );
 }

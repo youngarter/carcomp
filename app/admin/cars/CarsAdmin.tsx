@@ -14,11 +14,11 @@ import {
     Pencil,
     Trash
 } from "lucide-react";
-import { getFinitionCatalog, deleteFinition } from "@/app/car/actions";
-import { Car } from "@/types/car";
+import { getFinitionCatalog, deleteFinition } from "@/lib/actions/car.actions";
+import { FinitionCard } from "@/types/car.types";
 import Link from "next/link";
 
-import { toggleFinitionStatus, toggleFinitionPromotion } from "@/app/car/actions";
+import { toggleFinitionStatus, toggleFinitionPromotion } from "@/lib/actions/car.actions";
 
 export default function CarsAdmin() {
     const [cars, setCars] = useState<any[]>([]);
@@ -177,7 +177,7 @@ export default function CarsAdmin() {
                                 <td className="px-8 py-6">
                                     <div className="flex items-center gap-4">
                                         <div className="w-12 h-12 rounded-xl bg-zinc-100 overflow-hidden flex-shrink-0">
-                                            <img src={car.image || car.carModel?.image || ""} alt="" className="w-full h-full object-cover" />
+                                            <img src={(car.images && car.images[0]) || car.carModel?.image || ""} alt="" className="w-full h-full object-cover" />
                                         </div>
                                         <div>
                                             <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest leading-none mb-1">{car.carModel?.brand?.name}</p>
@@ -189,11 +189,11 @@ export default function CarsAdmin() {
                                     <code className="px-3 py-1 bg-zinc-100 rounded-lg text-[10px] font-bold text-zinc-500">{car.slug}</code>
                                 </td>
                                 <td className="px-8 py-6">
-                                    <span className="font-black text-zinc-600">{car.year || "N/A"}</span>
+                                    <span className="font-black text-zinc-600">{car.year?.toString() || "N/A"}</span>
                                 </td>
                                 <td className="px-8 py-6 text-center">
                                     <button
-                                        onClick={() => handleTogglePromotion(car.id, car.isPromoted)}
+                                        onClick={() => handleTogglePromotion(car.id as string, !!car.isPromoted)}
                                         className={`w-12 h-6 rounded-full p-1 transition-colors relative inline-flex items-center ${car.isPromoted ? "bg-emerald-500" : "bg-zinc-200"}`}
                                         title={car.isPromoted ? "Retirer des promotions" : "Mettre à la une"}
                                     >
@@ -201,7 +201,7 @@ export default function CarsAdmin() {
                                     </button>
                                 </td>
                                 <td className="px-8 py-6">
-                                    {car.isDeadModel ? (
+                                    {car.isDiscontinued ? (
                                         <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-50 text-red-600 text-[10px] font-black uppercase tracking-widest">
                                             <EyeOff className="w-3 h-3" /> Hors Marché
                                         </span>
@@ -214,11 +214,11 @@ export default function CarsAdmin() {
                                 <td className="px-8 py-6 text-right">
                                     <div className="flex items-center justify-end gap-2">
                                         <button
-                                            onClick={() => handleToggleStatus(car.id, car.isDeadModel)}
-                                            className={`p-2 rounded-lg transition-all ${car.isDeadModel ? "bg-emerald-50 text-emerald-600 hover:bg-emerald-100" : "bg-zinc-100 text-zinc-400 hover:bg-zinc-200"}`}
-                                            title={car.isDeadModel ? "Réactiver" : "Retirer"}
+                                            onClick={() => handleToggleStatus(car.id as string, !!car.isDiscontinued)}
+                                            className={`p-2 rounded-lg transition-all ${car.isDiscontinued ? "bg-emerald-50 text-emerald-600 hover:bg-emerald-100" : "bg-zinc-100 text-zinc-400 hover:bg-zinc-200"}`}
+                                            title={car.isDiscontinued ? "Réactiver" : "Retirer"}
                                         >
-                                            {car.isDeadModel ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                                            {car.isDiscontinued ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
                                         </button>
                                         <Link
                                             href={`/admin/cars/${car.slug}/edit`}
@@ -228,7 +228,7 @@ export default function CarsAdmin() {
                                             <Pencil className="w-4 h-4" />
                                         </Link>
                                         <button
-                                            onClick={() => handleDelete(car.id, car.name)}
+                                            onClick={() => handleDelete(car.id as string, car.name)}
                                             className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-all"
                                             title="Supprimer"
                                         >

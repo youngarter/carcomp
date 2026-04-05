@@ -17,7 +17,7 @@ export default async function AdminLayout({
         <div className="flex min-h-screen bg-[#F9FAFB]">
             <Sidebar userRole={session.user.role as string} />
             <main className="flex-1 min-w-0 overflow-auto">
-                <div className="max-w-[1400px] mx-auto min-h-screen">
+                <div className="max-w-[1400px]  mx-auto min-h-screen">
                     {children}
                 </div>
             </main>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { createInvitation } from "@/lib/actions/admin";
+import { createInvitation } from "@/lib/actions/admin.actions";
 import { Mail, Loader2, X, UserCheck } from "lucide-react";
 
 export default function InviteUserForm({ roles }: { roles: any[] }) {

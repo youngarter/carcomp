@@ -40,31 +40,37 @@ export async function POST(req: NextRequest) {
 
         // Sanitize names for folder structure
         const sanitize = (str: string) => str.toLowerCase().replace(/[^a-z0-9]/g, "-");
+        const brandSlug = sanitize(brand);
         const modelSlug = sanitize(formData.get("model") as string || "unknown");
         const yearSlug = sanitize(year);
-        const carSlug = sanitize(formData.get("slug") as string || finition);
+        // We assume "new" as default phase type if not provided, for the generation folder
+        const phaseType = formData.get("phaseType") as string || "new";
+        const generationSlug = `${sanitize(phaseType)}-${yearSlug}`;
+        const finitionSlug = sanitize(formData.get("slug") as string || finition);
         const index = formData.get("index") as string || "0";
 
         const folderPath = path.join(
             process.cwd(),
             "public",
             "uploads",
+            "cars",
+            brandSlug,
             modelSlug,
-            yearSlug,
-            carSlug
+            generationSlug,
+            finitionSlug
         );
 
         // Create directory recursively
         await mkdir(folderPath, { recursive: true });
 
-        // Save file with specific naming: {slug}-{index}.{ext}
+        // Save file with specific naming: {slug}-{index}.{ext} // or cover.jpg for principal
         const ext = path.extname(file.name);
-        const filename = `${carSlug}-${index}${ext}`;
+        const filename = index === "0" ? `cover${ext}` : `${finitionSlug}-${index}${ext}`;
         const filePath = path.join(folderPath, filename);
         await writeFile(filePath, buffer);
 
         // Return the public URL
-        const publicUrl = `/uploads/${modelSlug}/${yearSlug}/${carSlug}/${filename}`;
+        const publicUrl = `/uploads/cars/${brandSlug}/${modelSlug}/${generationSlug}/${finitionSlug}/${filename}`;
 
         return NextResponse.json({ success: true, url: publicUrl });
     } catch (error: any) {

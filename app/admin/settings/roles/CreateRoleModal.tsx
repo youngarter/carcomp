@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { createRole } from "@/lib/actions/admin";
+import { createRole } from "@/lib/actions/admin.actions";
 import { Plus, Loader2, X, Shield } from "lucide-react";
 
 export default function CreateRoleModal({ onClose }: { onClose: () => void }) {

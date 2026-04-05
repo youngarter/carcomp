@@ -1,27 +1,58 @@
 generator client {
-  provider = "prisma-client"
+  provider = "prisma-client-js"
   output   = "../app/generated/prisma"
 }
+
 datasource db {
   provider = "postgresql"
 }
 
-// --- AUTHENTIFICATION & UTILISATEURS ---
+// ==========================================
+// ENUMS (Domaine Automobile)
+// ==========================================
+
+enum FuelType {
+  ESSENCE
+  DIESEL
+  HYBRIDE
+  PHEV // Hybride rechargeable
+  ELECTRIQUE
+}
+
+enum Transmission {
+  MANUELLE
+  AUTOMATIQUE
+}
+
+enum BodyType {
+  SUV
+  CITADINE
+  BERLINE
+  BREAK
+  COUPE
+  CABRIOLET
+  PICKUP
+  MONOSPACE
+}
+
+// ==========================================
+// AUTHENTIFICATION & UTILISATEURS
+// ==========================================
 
 model User {
-  id            String          @id @default(uuid())
-  name          String?
-  email         String?         @unique
-  password      String?
-  image         String?
-  roleId        String?
-  role          Role?           @relation(fields: [roleId], references: [id])
-  accounts      Account[]
-  sessions      Session[]
-  activityLogs  ActivityLog[]
-  preferences   UserPreference? // Recommandation : Une relation 1-to-1 pour les préférences
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
+  id           String          @id @default(uuid())
+  name         String?
+  email        String?         @unique
+  password     String?
+  image        String?
+  roleId       String?
+  role         Role?           @relation(fields: [roleId], references: [id])
+  accounts     Account[]
+  sessions     Session[]
+  activityLogs ActivityLog[]
+  preferences  UserPreference?
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
 }
 
 model Role {
@@ -59,213 +90,218 @@ model ActivityLog {
   createdAt DateTime @default(now())
 }
 
-// --- CATALOGUE AUTOMOBILE ---
+model UserPreference {
+  id         String   @id @default(uuid())
+  userId     String   @unique
+  user       User     @relation(fields: [userId], references: [id])
+  budgetMin  Float?
+  budgetMax  Float?
+  usage      String? // Urbain, Autoroute, Mixte
+  passengers Int?
+  priority   String? // Confort, Économie, Sport
+  createdAt  DateTime @default(now())
+}
+
+// ==========================================
+// CATALOGUE AUTOMOBILE (Architecture Optimisée)
+// ==========================================
 
 model Brand {
   id          String     @id @default(uuid())
   slug        String     @unique
   name        String     @unique
-  origin      String?    // Reco : Pays d'origine (Allemande, Japonaise...)
+  origin      String?
   image       String?
   imageAlt    String?
   logo        String?
   logoAlt     String?
-  description String?
+  description String?    @db.Text
   models      CarModel[]
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([name])
 }
 
 model CarModel {
-  id             String         @id @default(uuid())
-  slug           String         @unique
-  name           String
-  brandId        String
-  brand          Brand          @relation(fields: [brandId], references: [id], onDelete: Cascade)
-  category       String         // SUV, Berline, Citadine
-  image          String?
-  aiScore        Float?         
-  reliability    Float?         
-  maintCost      Float?         
-  finitions      Finition[]
-  priceHistories PriceHistory[]
-  startPrice     Float?         @default(0)
-  endPrice       Float?         @default(0)
-  reviews        Review[]
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
+  id       String   @id @default(uuid())
+  slug     String   @unique
+  name     String
+  brandId  String
+  brand    Brand    @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  category BodyType
+  image    String?
+
+  // Scoring pré-calculé pour tri et recommandations IA
+  aiScore     Float?
+  reliability Float?
+  maintCost   Float?
+
+  // Cache des prix pour requêtes ultra-rapides (en centimes / dirhams)
+  minPrice Int? @default(0)
+  maxPrice Int? @default(0)
+
+  generations CarGeneration[]
+  finitions   Finition[]
+  reviews     Review[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([brandId])
+  @@index([category])
 }
 
-model PriceHistory {
-  id          String   @id @default(uuid())
-  carModelId  String
-  carModel    CarModel @relation(fields: [carModelId], references: [id], onDelete: Cascade)
-  startPrice  Float?   @default(0)
-  endPrice    Float?   @default(0)
-  year        Int
-  createdAt   DateTime @default(now())
+model CarGeneration {
+  id         String     @id @default(uuid())
+  slug       String     @unique
+  name       String
+  carModelId String
+  carModel   CarModel   @relation(fields: [carModelId], references: [id], onDelete: Cascade)
+  startYear  Int
+  endYear    Int? // Null = Toujours en production
+  phaseType  String // e.g., "new", "facelift"
+  isCurrent  Boolean    @default(false)
+  images     String[]   @default([])
+  finitions  Finition[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([carModelId])
 }
 
 model Finition {
-  id                    String                 @id @default(uuid())
-  slug                  String                 @unique
-  name                  String
-  carModelId            String
-  carModel              CarModel               @relation(fields: [carModelId], references: [id], onDelete: Cascade)
-  startPrice            Float?                 @default(0)
-  endPrice              Float?                 @default(0)
-  year                  Int?
-  isDeadModel           Boolean                @default(false)
-  image                 String?
-  images                String[]               @default([])
-  youtubeVideo          String?
+  id           String         @id @default(uuid())
+  slug         String         @unique
+  name         String
+  carModelId   String
+  carModel     CarModel       @relation(fields: [carModelId], references: [id], onDelete: Cascade)
+  generationId String?
+  generation   CarGeneration? @relation(fields: [generationId], references: [id])
 
-  // Moteur & Infos techniques
-  motorisation          String?
-  emplacement           String?  
-  energy                String?  // Essence, Diesel, Hybride, Electrique
-  fiscalPower           Int?     // CV fiscaux
-  transmission          String?  // Manuelle, Auto
-  driveTrain            String?  // Reco: Traction, Propulsion, 4x4
-  architecture          String?
-  cylindree             Int?
-  coupleMax             Int?
-  gearbox               String?
-  palettesVolant        String?
-  power                 Int?     // Ch DIN
-  powerThermique        Int?
-  powerElec             Int?
-  batteryCapacity       Float?
-  warranty              String?  // Reco: Garantie (ex: 3 ans / 100k km)
+  basePrice      Int? // Prix de base en centimes
+  year           Int?
+  isDiscontinued Boolean  @default(false)
+  isPromoted     Boolean  @default(false)
+  images         String[] @default([])
+  youtubeVideo   String?
 
-  // Conso. & performances
-  consoCity             Float?
-  consoRoad             Float?
-  consoMixed            Float?
-  co2Emission           Int?
-  critAir               Int?     // Reco: Important pour les ZFE
-  maxSpeed              Int?
-  acceleration          Float?   // 0-100 km/h
+  // Relation 1-to-1 stricte vers la mécanique (pour les filtres)
+  technicalSpecs TechnicalSpec?
 
-  // Dimensions & volumes
-  bodyType              String?  
-  seats                 Int?
-  weight                Int?
-  length                Int?
-  width                 Int?
-  height                Int?
-  wheelbase             Int?
-  tankVolume            Int?
-  trunkVolume           Int?
+  // Les équipements variables (JSONB)
+  safetyFeatures    Json @default("{}")
+  comfortFeatures   Json @default("{}")
+  aestheticFeatures Json @default("{}")
 
-  // Sécurité (Booleans)
-  airbags               Int?
-  abs                   Boolean  @default(false)
-  esp                   Boolean  @default(false)
-  antipatinage          Boolean  @default(false)
-  aideFreinageUrgence   Boolean  @default(false)
-  antidemarrage         Boolean  @default(false)
-  aideDemarrageCote     Boolean  @default(false)
-  modeConduite          Boolean  @default(false)
-  detecteurFatigue      Boolean  @default(false)
-  maintienVoie          Boolean  @default(false)
-  detecteurAngleMort    Boolean  @default(false)
-  detecteurSousGonflage Boolean  @default(false)
-  fermetureAuto         Boolean  @default(false)
-  isofix                Boolean  @default(false)
-  pharesAntibrouillard  Boolean  @default(false)
-  alarme                Boolean  @default(false)
+  priceHistory FinitionPriceHistory[]
 
-  // Confort
-  climatisation         String?
-  systemeAudio          String?
-  ordinateurBord        Boolean  @default(false)
-  startStop             Boolean  @default(false)
-  regulateurVitesse     Boolean  @default(false)
-  detecteurPluie        Boolean  @default(false)
-  allumageAutoFeux      Boolean  @default(false)
-  freinMainElectrique   Boolean  @default(false)
-  ecranTactile          Boolean  @default(false)
-  cockpitDigital        Boolean  @default(false)
-  reconnaissancePanneaux Boolean @default(false)
-  affichageTeteHaute    Boolean  @default(false)
-  cameraRecul           Boolean  @default(false)
-  radarStationnement    String? 
-  parkAssist            Boolean  @default(false)
-  commandesVolant       Boolean  @default(false)
-  commandesVocales      Boolean  @default(false)
-  volantReglable        String?
-  vitresElectriques     String?
-  retrosElectriques     Boolean  @default(false)
-  retrosRabattables     Boolean  @default(false)
-  coffreElectrique      Boolean  @default(false)
-  mainsLibres           Boolean  @default(false)
-  siegesElectriques     Boolean  @default(false)
-  siegesMemoire         Boolean  @default(false)
-  banquetteRabattable   String?
-  navigationGps         Boolean  @default(false)
-  wifi                  Boolean  @default(false)
-  bluetooth             Boolean  @default(false)
-  appleCarplay          Boolean  @default(false)
-  androidAuto           Boolean  @default(false)
-  chargeurSansFil       Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  // Esthétique
-  jantesAlu             String?
-  sellerie              String?
-  volantCuir            Boolean  @default(false)
-  followMeHome          Boolean  @default(false)
-  lumiereAmbiance       Boolean  @default(false)
-  feuxJour              String?
-  phares                String?
-  toit                  String?
-  barresToit            Boolean  @default(false)
-  vitresSurteintees     Boolean  @default(false)
+  @@index([carModelId])
+  @@index([basePrice])
+}
 
-  isPromoted            Boolean  @default(false)
-  finitionPriceHistory  FinitionPriceHistory[]
+model TechnicalSpec {
+  id         String   @id @default(uuid())
+  finitionId String   @unique
+  finition   Finition @relation(fields: [finitionId], references: [id], onDelete: Cascade)
 
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
+  // Moteur & Energie
+  fuelType           FuelType
+  transmission       Transmission
+  engineDisplacement Int? // Cylindrée en cm3
+  dinPower           Int? // Puissance ch
+  fiscalPower        Int? // CV fiscaux
+  batteryCapacity    Float? // Capacité batterie (kWh)
+  electricRange      Int? // Autonomie électrique (km)
+  maxTorque          Int? // Couple Max (Nm)
+
+  // Performances & Conso
+  topSpeed     Int? // km/h
+  acceleration Float? // 0-100 km/h en s
+  consoCity    Float? // L/100km
+  consoRoad    Float? // L/100km
+  consoMixed   Float? // L/100km
+  co2Emission  Int? // g/km
+
+  // Dimensions & Poids
+  trunkVolume Int? // Volume coffre (L)
+  tankVolume  Int? // Volume réservoir (L)
+  seats       Int  @default(5)
+  weight      Int? // Poids (kg)
+  length      Int? // mm
+  width       Int? // mm
+  height      Int? // mm
+  wheelbase   Int? // mm
+
+  // Indexes stratégiques pour la recherche
+  @@index([fuelType])
+  @@index([transmission])
+  @@index([dinPower])
+  @@index([consoMixed])
 }
 
 model FinitionPriceHistory {
-  id               String   @id @default(uuid())
+  id               String    @id @default(uuid())
   finitionId       String
-  finition         Finition @relation(fields: [finitionId], references: [id], onDelete: Cascade)
-  price            Float
-  isPromotion      Boolean  @default(false)
-  promotionalPrice Float?
+  finition         Finition  @relation(fields: [finitionId], references: [id], onDelete: Cascade)
+  price            Int // Prix en centimes
+  isPromotion      Boolean   @default(false)
+  promotionalPrice Int? // Prix remisé en centimes
   startDate        DateTime?
   endDate          DateTime?
-  createdAt        DateTime @default(now())
+  createdAt        DateTime  @default(now())
+
+  @@index([finitionId])
+  @@index([createdAt])
 }
 
 model Review {
   id          String   @id @default(uuid())
   carModelId  String
   carModel    CarModel @relation(fields: [carModelId], references: [id], onDelete: Cascade)
-  rating      Int      // 1-5
-  comment     String
+  rating      Int // 1-5
+  comment     String   @db.Text
   isAiSummary Boolean  @default(false)
   userName    String?
-  status      String   @default("PENDING") // Reco: PENDING, APPROVED, REJECTED
+  status      String   @default("PENDING") // PENDING, APPROVED, REJECTED
   createdAt   DateTime @default(now())
+
+  @@index([carModelId])
 }
 
-model UserPreference {
+// ==========================================
+// BLOG & CMS
+// ==========================================
+
+model Category {
+  id        String    @id @default(uuid())
+  name      String    @unique
+  slug      String    @unique
+  articles  Article[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Article {
   id         String   @id @default(uuid())
-  userId     String?  @unique
-  user       User?    @relation(fields: [userId], references: [id])
-  budgetMin  Float?
-  budgetMax  Float?
-  usage      String?  // Urbain, Autoroute, Mixte
-  passengers Int?
-  priority   String?  // Confort, Économie, Sport
+  title      String
+  subtitle   String?
+  slug       String   @unique
+  content    String   @db.Text
+  coverImage String?
+  images     String[] @default([])
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id])
   createdAt  DateTime @default(now())
-}
+  updatedAt  DateTime @updatedAt
 
-// --- CMS & UI ---
+  @@index([categoryId])
+}
 
 model HeroSlide {
   id          String   @id @default(uuid())
@@ -283,7 +319,9 @@ model HeroSlide {
   updatedAt   DateTime @updatedAt
 }
 
-// --- AUTH.JS MODELS (FIXED) ---
+// ==========================================
+// AUTH.JS (NextAuth) MODELS
+// ==========================================
 
 model Account {
   id                String  @id @default(uuid())
@@ -302,6 +340,7 @@ model Account {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
+  @@index([userId])
 }
 
 model Session {
@@ -310,6 +349,8 @@ model Session {
   userId       String
   expires      DateTime
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model VerificationToken {

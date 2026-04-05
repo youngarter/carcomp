@@ -12,7 +12,9 @@ import {
     Shield,
     Activity,
     ChevronRight,
-    LogOut
+    LogOut,
+    Newspaper,
+    Tag
 } from "lucide-react";
 import { signOut } from "next-auth/react";
 
@@ -25,8 +27,14 @@ const navItems = [
     },
     {
         title: "Car Inventory",
-        href: "/admin/settings/cars",
+        href: "/admin/cars",
         icon: Car,
+        roles: ["SUPER_ADMIN", "ADMIN"]
+    },
+    {
+        title: "Promotions",
+        href: "/admin/promotions",
+        icon: Tag,
         roles: ["SUPER_ADMIN", "ADMIN"]
     },
     {
@@ -58,6 +66,16 @@ const navItems = [
         href: "/admin/settings",
         icon: Settings,
         roles: ["SUPER_ADMIN", "ADMIN"]
+    },
+    {
+        title: "À la une",
+        href: "/admin/alaune",
+        icon: Newspaper,
+        roles: ["SUPER_ADMIN", "ADMIN"],
+        subItems: [
+            { title: "Articles", href: "/admin/alaune" },
+            { title: "Catégories", href: "/admin/alaune/categories" }
+        ]
     }
 ];
 
@@ -78,24 +96,47 @@ export default function Sidebar({ userRole }: { userRole: string }) {
 
                 <nav className="space-y-2">
                     {filteredItems.map((item) => {
-                        const isActive = pathname === item.href;
+                        const isActive = pathname === item.href || (item.subItems?.some(sub => pathname === sub.href));
+                        const hasSubItems = item.subItems && item.subItems.length > 0;
+
                         return (
-                            <Link
-                                key={item.href}
-                                href={item.href}
-                                className={`flex items-center justify-between p-4 rounded-2xl transition-all duration-300 group ${isActive
+                            <div key={item.href} className="space-y-1">
+                                <Link
+                                    href={item.href}
+                                    className={`flex items-center justify-between p-4 rounded-2xl transition-all duration-300 group ${isActive
                                         ? "bg-emerald-50 text-emerald-700 font-bold border border-emerald-100/50"
                                         : "text-zinc-500 hover:bg-zinc-50 hover:text-zinc-900 font-medium"
-                                    }`}
-                            >
-                                <div className="flex items-center gap-4">
-                                    <item.icon className={`w-5 h-5 transition-colors ${isActive ? "text-emerald-600" : "group-hover:text-emerald-600"}`} />
-                                    <span className="text-sm">{item.title}</span>
-                                </div>
-                                {isActive && (
-                                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-600 shadow-[0_0_10px_rgba(5,150,105,0.5)]" />
+                                        }`}
+                                >
+                                    <div className="flex items-center gap-4">
+                                        <item.icon className={`w-5 h-5 transition-colors ${isActive ? "text-emerald-600" : "group-hover:text-emerald-600"}`} />
+                                        <span className="text-sm">{item.title}</span>
+                                    </div>
+                                    {isActive && !hasSubItems && (
+                                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-600 shadow-[0_0_10px_rgba(5,150,105,0.5)]" />
+                                    )}
+                                </Link>
+
+                                {hasSubItems && (isActive || pathname.startsWith(item.href)) && (
+                                    <div className="ml-12 space-y-1 border-l border-zinc-100 pl-4 py-1">
+                                        {item.subItems?.map((sub) => {
+                                            const isSubActive = pathname === sub.href;
+                                            return (
+                                                <Link
+                                                    key={sub.href}
+                                                    href={sub.href}
+                                                    className={`block py-2 text-sm transition-colors ${isSubActive
+                                                        ? "text-emerald-600 font-bold"
+                                                        : "text-zinc-400 hover:text-zinc-900 font-medium"
+                                                        }`}
+                                                >
+                                                    {sub.title}
+                                                </Link>
+                                            );
+                                        })}
+                                    </div>
                                 )}
-                            </Link>
+                            </div>
                         );
                     })}
                 </nav>
